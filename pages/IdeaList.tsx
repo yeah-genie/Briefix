@@ -4,7 +4,7 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { IdeaStatus, Priority, Category, Idea, TriggerType, IdeaSource } from '../types';
 import { StatusBadge, PriorityBadge } from '../components/Badges';
-import { Plus, Search, Filter, MessageSquare, FileText, Globe, Link2, LayoutGrid, List as ListIcon, ThumbsUp, ThumbsDown, CalendarDays, AlertTriangle, Snowflake, X, Lightbulb } from 'lucide-react';
+import { Plus, Search, Filter, ThumbsUp, ThumbsDown, Snowflake, X, Lightbulb, AlertTriangle } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import PageHeader from '../components/PageHeader';
 import EmptyState from '../components/EmptyState';
@@ -46,7 +46,6 @@ const IdeaList: React.FC = () => {
   };
   const navigate = useNavigate();
 
-  const [viewMode, setViewMode] = useState<'list' | 'kanban' | 'timeline'>('list');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'All'>('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -142,48 +141,6 @@ const IdeaList: React.FC = () => {
     navigate(`/ideas/${newIdea.idea_id}`);
   };
 
-  const renderKanban = () => {
-    const columns = [
-      { title: 'Active', status: IdeaStatus.Active },
-      { title: 'In Progress', status: IdeaStatus.InProgress },
-      { title: 'Frozen', status: IdeaStatus.Frozen },
-    ];
-
-    return (
-      <div className="flex gap-4 overflow-x-auto pb-4">
-        {columns.map(col => {
-          const colIdeas = filteredIdeas.filter(i => i.status === col.status);
-          return (
-            <div key={col.title} className="min-w-[280px] w-80 glass rounded-xl flex flex-col max-h-[calc(100vh-280px)]">
-              <div className="p-3 font-semibold flex justify-between items-center"
-                style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-primary)' }}>
-                {col.title}
-                <span className="text-xs px-2 py-0.5 rounded-full"
-                  style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>{colIdeas.length}</span>
-              </div>
-              <div className="p-2 space-y-2 overflow-y-auto flex-1">
-                {colIdeas.map(idea => (
-                  <div key={idea.idea_id} onClick={() => navigate(`/ideas/${idea.idea_id}`)}
-                    className="glass p-3 rounded-lg cursor-pointer transition-all duration-200">
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-sm font-medium line-clamp-2" style={{ color: 'var(--text-primary)' }}>{idea.title}</span>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <PriorityBadge priority={idea.priority} />
-                      <div className="flex items-center text-xs gap-1" style={{ color: 'var(--text-muted)' }}>
-                        <ThumbsUp className="w-3 h-3" /> {idea.votes || 0}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    );
-  };
-
   return (
     <div className="h-full flex flex-col gap-4 overflow-hidden">
       {/* Header */}
@@ -263,110 +220,92 @@ const IdeaList: React.FC = () => {
             </div>
           )}
         </div>
-
-        <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-          {[
-            { mode: 'list' as const, icon: ListIcon, title: 'List' },
-            { mode: 'kanban' as const, icon: LayoutGrid, title: 'Kanban' },
-          ].map(({ mode, icon: Icon, title }) => (
-            <button key={mode} onClick={() => setViewMode(mode)} title={title}
-              className="p-1.5 rounded-md transition-all"
-              style={{
-                background: viewMode === mode ? 'var(--accent-glow)' : 'transparent',
-                color: viewMode === mode ? 'var(--accent)' : 'var(--text-muted)'
-              }}>
-              <Icon className="w-4 h-4" />
-            </button>
-          ))}
-        </div>
       </div>
 
-      {/* Views */}
+      {/* List View */}
       <div className="flex-1 min-h-0 overflow-auto">
-        {viewMode === 'kanban' ? renderKanban() : (
-          <div className="glass rounded-xl overflow-hidden">
-            <ul>
-              {filteredIdeas.length === 0 ? (
-                <li className="p-12 text-center flex flex-col items-center justify-center">
-                  <Lightbulb className="w-12 h-12 mb-4" style={{ color: 'var(--text-muted)' }} />
-                  <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>No ideas yet</h3>
-                  <p className="text-sm mb-4 max-w-sm" style={{ color: 'var(--text-muted)' }}>
-                    Capture your first idea! Great ideas deserve a home where they won't be forgotten.
-                  </p>
-                  <button onClick={handleOpenModal}
-                    className="px-4 py-2 rounded-lg text-sm font-medium flex items-center"
-                    style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', color: 'var(--bg-primary)' }}>
-                    <Plus className="w-4 h-4 mr-1.5" /> Create Your First Idea
-                  </button>
-                </li>
-              ) : filteredIdeas.map(idea => (
-                <li key={idea.idea_id}
-                  className="p-4 cursor-pointer transition-all duration-200"
-                  style={{
-                    borderBottom: '1px solid var(--border)',
-                    background: idea.is_zombie ? 'rgba(14, 165, 233, 0.05)' : 'transparent',
-                    borderLeft: idea.is_zombie ? '3px solid #0ea5e9' : 'none'
-                  }}
-                  onClick={() => navigate(`/ideas/${idea.idea_id}`)}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0 mr-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        {idea.is_zombie && <Snowflake className="w-4 h-4 flex-shrink-0" style={{ color: '#0ea5e9' }} />}
-                        <h3 className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                          {idea.title}
-                        </h3>
-                        <PriorityBadge priority={idea.priority} />
-                      </div>
-                      <p className="text-sm line-clamp-1" style={{ color: 'var(--text-muted)' }}>{idea.description}</p>
-                      {idea.is_zombie && idea.zombie_reason && (
-                        <p className="text-xs mt-1" style={{ color: '#0ea5e9' }}>Trigger: {idea.zombie_reason}</p>
-                      )}
+        <div className="glass rounded-xl overflow-hidden">
+          <ul>
+            {filteredIdeas.length === 0 ? (
+              <li className="p-12 text-center flex flex-col items-center justify-center">
+                <Lightbulb className="w-12 h-12 mb-4" style={{ color: 'var(--text-muted)' }} />
+                <h3 className="font-bold text-lg mb-2" style={{ color: 'var(--text-primary)' }}>No ideas yet</h3>
+                <p className="text-sm mb-4 max-w-sm" style={{ color: 'var(--text-muted)' }}>
+                  Capture your first idea! Great ideas deserve a home where they won't be forgotten.
+                </p>
+                <button onClick={handleOpenModal}
+                  className="px-4 py-2 rounded-lg text-sm font-medium flex items-center"
+                  style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', color: 'var(--bg-primary)' }}>
+                  <Plus className="w-4 h-4 mr-1.5" /> Create Your First Idea
+                </button>
+              </li>
+            ) : filteredIdeas.map(idea => (
+              <li key={idea.idea_id}
+                className="p-4 cursor-pointer transition-all duration-200"
+                style={{
+                  borderBottom: '1px solid var(--border)',
+                  background: idea.is_zombie ? 'rgba(14, 165, 233, 0.05)' : 'transparent',
+                  borderLeft: idea.is_zombie ? '3px solid #0ea5e9' : 'none'
+                }}
+                onClick={() => navigate(`/ideas/${idea.idea_id}`)}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 min-w-0 mr-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      {idea.is_zombie && <Snowflake className="w-4 h-4 flex-shrink-0" style={{ color: '#0ea5e9' }} />}
+                      <h3 className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                        {idea.title}
+                      </h3>
+                      <PriorityBadge priority={idea.priority} />
                     </div>
-                    <div className="flex items-center gap-2">
-                      {/* Freeze/Wake Button */}
-                      {idea.is_zombie ? (
-                        <button onClick={(e) => handleThaw(e, idea)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
-                          style={{ background: '#22d3ee', color: 'var(--bg-primary)' }}>
-                          <Snowflake className="w-3 h-3" /> Wake
-                        </button>
-                      ) : (
-                        <button onClick={(e) => handleFreeze(e, idea)}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
-                          style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
-                          <Snowflake className="w-3 h-3" /> Freeze
-                        </button>
-                      )}
-                      {/* Vote Buttons */}
-                      <div className="flex items-center gap-0.5">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'upvote' as any); }}
-                          className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-green-500/20"
-                          style={{ color: '#22c55e' }}>
-                          <ThumbsUp className="w-4 h-4" />
-                        </button>
-                        <span className="text-sm font-bold min-w-[24px] text-center" style={{ color: 'var(--text-primary)' }}>
-                          {idea.votes || 0}
-                        </span>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'downvote' as any); }}
-                          className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-red-500/20"
-                          style={{ color: '#ef4444' }}>
-                          <ThumbsDown className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <StatusBadge status={idea.status} />
+                    <p className="text-sm line-clamp-1" style={{ color: 'var(--text-muted)' }}>{idea.description}</p>
+                    {idea.is_zombie && idea.zombie_reason && (
+                      <p className="text-xs mt-1" style={{ color: '#0ea5e9' }}>Trigger: {idea.zombie_reason}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {/* Freeze/Wake Button */}
+                    {idea.is_zombie ? (
+                      <button onClick={(e) => handleThaw(e, idea)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                        style={{ background: '#22d3ee', color: 'var(--bg-primary)' }}>
+                        <Snowflake className="w-3 h-3" /> Wake
+                      </button>
+                    ) : (
+                      <button onClick={(e) => handleFreeze(e, idea)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                        style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
+                        <Snowflake className="w-3 h-3" /> Freeze
+                      </button>
+                    )}
+                    {/* Vote Buttons */}
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'upvote' as any); }}
+                        className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-green-500/20"
+                        style={{ color: '#22c55e' }}>
+                        <ThumbsUp className="w-4 h-4" />
+                      </button>
+                      <span className="text-sm font-bold min-w-[24px] text-center" style={{ color: 'var(--text-primary)' }}>
+                        {idea.votes || 0}
+                      </span>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'downvote' as any); }}
+                        className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-red-500/20"
+                        style={{ color: '#ef4444' }}>
+                        <ThumbsDown className="w-4 h-4" />
+                      </button>
                     </div>
+                    <StatusBadge status={idea.status} />
                   </div>
-                  <div className="mt-2 flex items-center text-xs gap-3" style={{ color: 'var(--text-muted)' }}>
-                    <span>{idea.category}</span>
-                    <span>Updated {new Date(idea.updated_at).toLocaleDateString()}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                </div>
+                <div className="mt-2 flex items-center text-xs gap-3" style={{ color: 'var(--text-muted)' }}>
+                  <span>{idea.category}</span>
+                  <span>Updated {new Date(idea.updated_at).toLocaleDateString()}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* Add Modal */}
