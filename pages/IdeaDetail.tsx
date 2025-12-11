@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { IdeaStatus, TriggerType, DecisionType, DecisionOutcome, Decision, Idea, IdeaSource, VoteTag } from '../types';
 import { StatusBadge, PriorityBadge, CategoryBadge } from '../components/Badges';
-import { ArrowLeft, Archive, Skull, Clock, CheckCircle2, Plus, Snowflake, ThumbsUp, GitMerge, CalendarClock, History, Search, Network, X, Book, ExternalLink, BarChart3, TrendingUp, TrendingDown, Minus, Tag } from 'lucide-react';
+import { ArrowLeft, Archive, Skull, Clock, CheckCircle2, Plus, Snowflake, ThumbsUp, GitMerge, CalendarClock, History, Search, Network, X, Book, ExternalLink, BarChart3, TrendingUp, TrendingDown, Minus, Tag, Calendar, Activity, Globe2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import Comments from '../components/Comments';
 
@@ -378,31 +378,62 @@ const IdeaDetail: React.FC = () => {
                                     Set a smart trigger to wake this idea at the right time.
                                 </p>
 
-                                {/* Trigger Type Selection - Cards */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    {[
-                                        { type: TriggerType.Time, icon: '📅', label: 'Date', desc: 'Wake on specific date' },
-                                        { type: TriggerType.Metric, icon: '📊', label: 'Metric', desc: 'When KPI hits target' },
-                                        { type: TriggerType.External, icon: '🌐', label: 'News/Signal', desc: 'Market or competitor move' },
-                                        { type: TriggerType.None, icon: '❄️', label: 'Keep Frozen', desc: 'No auto wake' },
-                                    ].map(opt => (
-                                        <button key={opt.type} type="button" onClick={() => setTriggerType(opt.type)}
-                                            className="p-4 rounded-xl text-left transition-all"
-                                            style={{
-                                                background: triggerType === opt.type ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
-                                                border: triggerType === opt.type ? '2px solid var(--accent)' : '2px solid var(--border)'
-                                            }}>
-                                            <div className="text-2xl mb-2">{opt.icon}</div>
-                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{opt.label}</div>
-                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{opt.desc}</div>
-                                        </button>
-                                    ))}
+                                {/* Trigger Type Selection - Clean Cards */}
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button type="button" onClick={() => setTriggerType(TriggerType.Time)}
+                                        className="p-3 rounded-lg flex items-center gap-3 transition-all"
+                                        style={{
+                                            background: triggerType === TriggerType.Time ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                                            border: triggerType === TriggerType.Time ? '1px solid var(--accent)' : '1px solid var(--border)'
+                                        }}>
+                                        <Calendar className="w-5 h-5" style={{ color: triggerType === TriggerType.Time ? 'var(--accent)' : 'var(--text-muted)' }} />
+                                        <div className="text-left">
+                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Date</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Specific date</div>
+                                        </div>
+                                    </button>
+                                    <button type="button" onClick={() => setTriggerType(TriggerType.Metric)}
+                                        className="p-3 rounded-lg flex items-center gap-3 transition-all"
+                                        style={{
+                                            background: triggerType === TriggerType.Metric ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                                            border: triggerType === TriggerType.Metric ? '1px solid var(--accent)' : '1px solid var(--border)'
+                                        }}>
+                                        <BarChart3 className="w-5 h-5" style={{ color: triggerType === TriggerType.Metric ? 'var(--accent)' : 'var(--text-muted)' }} />
+                                        <div className="text-left">
+                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Metric</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>KPI target</div>
+                                        </div>
+                                    </button>
+                                    <button type="button" onClick={() => setTriggerType(TriggerType.External)}
+                                        className="p-3 rounded-lg flex items-center gap-3 transition-all"
+                                        style={{
+                                            background: triggerType === TriggerType.External ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                                            border: triggerType === TriggerType.External ? '1px solid var(--accent)' : '1px solid var(--border)'
+                                        }}>
+                                        <Globe2 className="w-5 h-5" style={{ color: triggerType === TriggerType.External ? 'var(--accent)' : 'var(--text-muted)' }} />
+                                        <div className="text-left">
+                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Signal</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Market watch</div>
+                                        </div>
+                                    </button>
+                                    <button type="button" onClick={() => setTriggerType(TriggerType.None)}
+                                        className="p-3 rounded-lg flex items-center gap-3 transition-all"
+                                        style={{
+                                            background: triggerType === TriggerType.None ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                                            border: triggerType === TriggerType.None ? '1px solid var(--accent)' : '1px solid var(--border)'
+                                        }}>
+                                        <Snowflake className="w-5 h-5" style={{ color: triggerType === TriggerType.None ? 'var(--accent)' : 'var(--text-muted)' }} />
+                                        <div className="text-left">
+                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Keep Frozen</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Manual wake</div>
+                                        </div>
+                                    </button>
                                 </div>
 
                                 {/* Dynamic Input Based on Type */}
                                 {triggerType === TriggerType.Time && (
                                     <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>📅 Wake Date</label>
+                                        <label className="block text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}><Calendar className="w-4 h-4" /> Wake Date</label>
                                         <input required type="date" className="w-full rounded-lg p-3 outline-none text-lg"
                                             min={new Date().toISOString().split('T')[0]}
                                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
@@ -432,7 +463,7 @@ const IdeaDetail: React.FC = () => {
 
                                 {triggerType === TriggerType.Metric && (
                                     <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>📊 Wake Condition</label>
+                                        <label className="block text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}><BarChart3 className="w-4 h-4" /> Wake Condition</label>
                                         <input required type="text" placeholder="e.g. MAU > 1000, Revenue > $10K"
                                             className="w-full rounded-lg p-3 outline-none"
                                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
@@ -452,7 +483,7 @@ const IdeaDetail: React.FC = () => {
 
                                 {triggerType === TriggerType.External && (
                                     <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
-                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>🌐 Watch for Signal</label>
+                                        <label className="block text-sm font-medium mb-2 flex items-center gap-2" style={{ color: 'var(--text-secondary)' }}><Globe2 className="w-4 h-4" /> Watch for Signal</label>
                                         <input required type="text" placeholder="e.g. Competitor launches X, AI funding news"
                                             className="w-full rounded-lg p-3 outline-none"
                                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
@@ -472,7 +503,7 @@ const IdeaDetail: React.FC = () => {
 
                                 {/* Note (Optional) */}
                                 <div>
-                                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>💬 Note (optional)</label>
+                                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Note (optional)</label>
                                     <textarea className="w-full rounded-lg p-3 outline-none resize-none text-sm" rows={2}
                                         placeholder="Why this trigger? Any context for future you..."
                                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
@@ -485,7 +516,7 @@ const IdeaDetail: React.FC = () => {
                                         className="px-5 py-2.5 text-sm rounded-lg" style={{ color: 'var(--text-secondary)' }}>Cancel</button>
                                     <button type="submit" className="px-5 py-2.5 text-sm rounded-lg font-medium flex items-center gap-2"
                                         style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
-                                        ❄️ Set Trigger & Freeze
+                                        <Snowflake className="w-4 h-4" /> Set Trigger
                                     </button>
                                 </div>
                             </form>
