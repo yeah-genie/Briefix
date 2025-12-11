@@ -38,10 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="h-full flex flex-col">
           {/* Workspace Header */}
           <div className="h-16 flex items-center px-5" style={{ borderBottom: '1px solid var(--border)' }}>
-            <div className="h-9 w-9 rounded-xl flex items-center justify-center mr-3 font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%)', color: 'var(--bg-primary)' }}>
-              C
-            </div>
+            <img src="/logo.png" alt="Cryo" className="h-9 w-9 rounded-xl mr-3 object-cover" />
             <div>
               <span className="font-bold text-lg tracking-tight" style={{ color: 'var(--text-primary)' }}>Cryo</span>
               <span className="text-xs ml-2 px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>Beta</span>
