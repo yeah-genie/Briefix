@@ -262,58 +262,31 @@ const IdeaList: React.FC = () => {
                       <PriorityBadge priority={idea.priority} />
                     </div>
                     <p className="text-sm line-clamp-1" style={{ color: 'var(--text-muted)' }}>{idea.description}</p>
-                    {idea.is_zombie && idea.zombie_reason && (
-                      <p className="text-xs mt-1" style={{ color: '#0ea5e9' }}>Trigger: {idea.zombie_reason}</p>
-                    )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    {/* Vote Count */}
+                    <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--text-muted)' }}>
+                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <span>{idea.votes || 0}</span>
+                    </div>
                     {/* Freeze/Wake Button */}
                     {idea.is_zombie ? (
                       <button onClick={(e) => handleThaw(e, idea)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium"
                         style={{ background: '#22d3ee', color: 'var(--bg-primary)' }}>
-                        <Snowflake className="w-3 h-3" /> Wake
+                        Wake
                       </button>
                     ) : (
                       <button onClick={(e) => handleFreeze(e, idea)}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
-                        style={{ background: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', border: '1px solid rgba(14, 165, 233, 0.3)' }}>
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium"
+                        style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
                         <Snowflake className="w-3 h-3" /> Freeze
                       </button>
                     )}
-                    {/* Vote Buttons */}
-                    <div className="flex items-center gap-0.5">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'upvote' as any); }}
-                        className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-green-500/20"
-                        style={{ color: '#22c55e' }}>
-                        <ThumbsUp className="w-4 h-4" />
-                      </button>
-                      <span className="text-sm font-bold min-w-[24px] text-center" style={{ color: 'var(--text-primary)' }}>
-                        {idea.votes || 0}
-                      </span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); voteIdea(idea.idea_id, 'downvote' as any); }}
-                        className="p-1.5 rounded-lg transition-all hover:scale-110 hover:bg-red-500/20"
-                        style={{ color: '#ef4444' }}>
-                        <ThumbsDown className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <StatusBadge status={idea.status} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center text-xs gap-3 flex-wrap" style={{ color: 'var(--text-muted)' }}>
-                  <span>{idea.category}</span>
-                  <span>Updated {new Date(idea.updated_at).toLocaleDateString()}</span>
-                  {/* Trigger Badge */}
-                  {idea.trigger_type && idea.trigger_type !== 'None' && (
-                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
-                      style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
-                      {idea.trigger_type === 'Time' && `📅 ${idea.trigger_date ? new Date(idea.trigger_date).toLocaleDateString() : 'Date set'}`}
-                      {idea.trigger_type === 'Metric' && `📊 ${idea.trigger_metric || 'Metric trigger'}`}
-                      {idea.trigger_type === 'External' && `🌐 ${idea.trigger_metric || 'Signal watch'}`}
-                    </span>
-                  )}
+                <div className="mt-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {idea.category} · {new Date(idea.updated_at).toLocaleDateString()}
                 </div>
               </li>
             ))}
