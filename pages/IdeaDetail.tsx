@@ -372,38 +372,121 @@ const IdeaDetail: React.FC = () => {
                         </div>
 
                         {isArchiveModalOpen && (
-                            <form onSubmit={handleArchiveOrReschedule} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Trigger Type</label>
-                                    <select className="w-full rounded-lg p-2.5 outline-none" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
-                                        value={triggerType} onChange={(e) => setTriggerType(e.target.value as TriggerType)}>
-                                        {Object.values(TriggerType).map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
+                            <form onSubmit={handleArchiveOrReschedule} className="space-y-5">
+                                {/* Intro */}
+                                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                                    Set a smart trigger to wake this idea at the right time.
+                                </p>
+
+                                {/* Trigger Type Selection - Cards */}
+                                <div className="grid grid-cols-2 gap-3">
+                                    {[
+                                        { type: TriggerType.Time, icon: '📅', label: 'Date', desc: 'Wake on specific date' },
+                                        { type: TriggerType.Metric, icon: '📊', label: 'Metric', desc: 'When KPI hits target' },
+                                        { type: TriggerType.External, icon: '🌐', label: 'News/Signal', desc: 'Market or competitor move' },
+                                        { type: TriggerType.None, icon: '❄️', label: 'Keep Frozen', desc: 'No auto wake' },
+                                    ].map(opt => (
+                                        <button key={opt.type} type="button" onClick={() => setTriggerType(opt.type)}
+                                            className="p-4 rounded-xl text-left transition-all"
+                                            style={{
+                                                background: triggerType === opt.type ? 'var(--accent-glow)' : 'var(--bg-tertiary)',
+                                                border: triggerType === opt.type ? '2px solid var(--accent)' : '2px solid var(--border)'
+                                            }}>
+                                            <div className="text-2xl mb-2">{opt.icon}</div>
+                                            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{opt.label}</div>
+                                            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>{opt.desc}</div>
+                                        </button>
+                                    ))}
                                 </div>
+
+                                {/* Dynamic Input Based on Type */}
                                 {triggerType === TriggerType.Time && (
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Date</label>
-                                        <input required type="date" className="w-full rounded-lg p-2.5 outline-none" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>📅 Wake Date</label>
+                                        <input required type="date" className="w-full rounded-lg p-3 outline-none text-lg"
+                                            min={new Date().toISOString().split('T')[0]}
+                                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                             value={triggerDate} onChange={e => setTriggerDate(e.target.value)} />
+                                        {/* Quick Presets */}
+                                        <div className="flex gap-2 mt-3 flex-wrap">
+                                            {[
+                                                { label: 'Next Week', days: 7 },
+                                                { label: '2 Weeks', days: 14 },
+                                                { label: '1 Month', days: 30 },
+                                                { label: '3 Months', days: 90 },
+                                            ].map(preset => (
+                                                <button key={preset.label} type="button"
+                                                    onClick={() => {
+                                                        const d = new Date();
+                                                        d.setDate(d.getDate() + preset.days);
+                                                        setTriggerDate(d.toISOString().split('T')[0]);
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                                                    style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                                                    {preset.label}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
+
                                 {triggerType === TriggerType.Metric && (
-                                    <div>
-                                        <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Condition</label>
-                                        <input required type="text" placeholder="e.g. MAU > 1000" className="w-full rounded-lg p-2.5 outline-none"
-                                            style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                    <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>📊 Wake Condition</label>
+                                        <input required type="text" placeholder="e.g. MAU > 1000, Revenue > $10K"
+                                            className="w-full rounded-lg p-3 outline-none"
+                                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                             value={triggerMetric} onChange={e => setTriggerMetric(e.target.value)} />
+                                        {/* Quick Presets */}
+                                        <div className="flex gap-2 mt-3 flex-wrap">
+                                            {['MAU > 1000', 'Revenue > $10K', 'NPS > 50', 'Churn < 5%'].map(preset => (
+                                                <button key={preset} type="button" onClick={() => setTriggerMetric(preset)}
+                                                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                                                    style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                                                    {preset}
+                                                </button>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
+
+                                {triggerType === TriggerType.External && (
+                                    <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
+                                        <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>🌐 Watch for Signal</label>
+                                        <input required type="text" placeholder="e.g. Competitor launches X, AI funding news"
+                                            className="w-full rounded-lg p-3 outline-none"
+                                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                                            value={triggerMetric} onChange={e => setTriggerMetric(e.target.value)} />
+                                        {/* Quick Presets */}
+                                        <div className="flex gap-2 mt-3 flex-wrap">
+                                            {['Competitor move', 'New regulation', 'Tech breakthrough', 'Market shift'].map(preset => (
+                                                <button key={preset} type="button" onClick={() => setTriggerMetric(preset)}
+                                                    className="px-3 py-1.5 rounded-lg text-xs font-medium"
+                                                    style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                                                    {preset}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Note (Optional) */}
                                 <div>
-                                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Note</label>
-                                    <textarea className="w-full rounded-lg p-2.5 outline-none resize-none" rows={2}
+                                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>💬 Note (optional)</label>
+                                    <textarea className="w-full rounded-lg p-3 outline-none resize-none text-sm" rows={2}
+                                        placeholder="Why this trigger? Any context for future you..."
                                         style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
                                         value={archiveReason} onChange={e => setArchiveReason(e.target.value)} />
                                 </div>
-                                <div className="flex justify-end gap-2 pt-2">
-                                    <button type="button" onClick={() => setIsArchiveModalOpen(false)} className="px-4 py-2 text-sm rounded-lg" style={{ color: 'var(--text-secondary)' }}>Cancel</button>
-                                    <button type="submit" className="px-4 py-2 text-sm rounded-lg font-medium" style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>Save</button>
+
+                                {/* Actions */}
+                                <div className="flex justify-end gap-3 pt-2">
+                                    <button type="button" onClick={() => setIsArchiveModalOpen(false)}
+                                        className="px-5 py-2.5 text-sm rounded-lg" style={{ color: 'var(--text-secondary)' }}>Cancel</button>
+                                    <button type="submit" className="px-5 py-2.5 text-sm rounded-lg font-medium flex items-center gap-2"
+                                        style={{ background: 'var(--accent)', color: 'var(--bg-primary)' }}>
+                                        ❄️ Set Trigger & Freeze
+                                    </button>
                                 </div>
                             </form>
                         )}

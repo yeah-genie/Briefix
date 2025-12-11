@@ -302,9 +302,18 @@ const IdeaList: React.FC = () => {
                     <StatusBadge status={idea.status} />
                   </div>
                 </div>
-                <div className="mt-2 flex items-center text-xs gap-3" style={{ color: 'var(--text-muted)' }}>
+                <div className="mt-2 flex items-center text-xs gap-3 flex-wrap" style={{ color: 'var(--text-muted)' }}>
                   <span>{idea.category}</span>
                   <span>Updated {new Date(idea.updated_at).toLocaleDateString()}</span>
+                  {/* Trigger Badge */}
+                  {idea.trigger_type && idea.trigger_type !== 'None' && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs"
+                      style={{ background: 'var(--accent-glow)', color: 'var(--accent)' }}>
+                      {idea.trigger_type === 'Time' && `📅 ${idea.trigger_date ? new Date(idea.trigger_date).toLocaleDateString() : 'Date set'}`}
+                      {idea.trigger_type === 'Metric' && `📊 ${idea.trigger_metric || 'Metric trigger'}`}
+                      {idea.trigger_type === 'External' && `🌐 ${idea.trigger_metric || 'Signal watch'}`}
+                    </span>
+                  )}
                 </div>
               </li>
             ))}
