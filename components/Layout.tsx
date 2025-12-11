@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import {
-  LayoutDashboard, Lightbulb, ClipboardList, Settings, Menu, X
+  LayoutDashboard, Lightbulb, Settings, Menu, X
 } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
@@ -17,7 +17,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'Ideas', path: '/ideas', icon: Lightbulb },
-    { name: 'Decisions', path: '/decisions', icon: ClipboardList },
     { name: 'Settings', path: '/settings', icon: Settings },
   ];
 

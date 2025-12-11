@@ -7,7 +7,6 @@ import OnboardingModal from './components/OnboardingModal';
 import Dashboard from './pages/Dashboard';
 import IdeaList from './pages/IdeaList';
 import IdeaDetail from './pages/IdeaDetail';
-import Decisions from './pages/Decisions';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import LandingNew from './pages/LandingNew';
@@ -70,7 +69,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
       <Route path="/ideas" element={<Layout><IdeaList /></Layout>} />
       <Route path="/ideas/:id" element={<Layout><IdeaDetail /></Layout>} />
-      <Route path="/decisions" element={<Layout><Decisions /></Layout>} />
       <Route path="/frozen" element={<Navigate to="/ideas?filter=frozen" replace />} />
       <Route path="/zombie" element={<Navigate to="/ideas?filter=frozen" replace />} />
       <Route path="/settings" element={<Layout><Settings /></Layout>} />
