@@ -628,29 +628,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-12 px-6 border-y border-[var(--border)]">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { value: 12847, suffix: "+", label: "Ideas tracked", decimals: 0 },
-              { value: 523, suffix: "+", label: "Teams using Briefix", decimals: 0 },
-              { value: 87, suffix: "%", label: "Ideas shipped faster", decimals: 0 },
-              { value: 4.9, suffix: "/5", label: "User rating", decimals: 1 },
-            ].map((stat, i) => (
-              <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-[var(--text-primary)]">
-                    <AnimatedCounter target={stat.value} decimals={stat.decimals} />
-                    {stat.suffix}
-                  </div>
-                  <div className="text-sm text-[var(--text-tertiary)] mt-1">{stat.label}</div>
-                </div>
-              </ScrollReveal>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Problem */}
       <section className="py-24 px-6">
