@@ -1,307 +1,297 @@
 "use client";
 
-import { useState } from "react";
-import { useIdeasStore } from "../../store/ideas";
-import { IdeaStatus, statusConfig, Idea } from "../../types";
+import { useState, useEffect } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  closestCorners,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragStartEvent,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-const columns: { status: IdeaStatus; title: string }[] = [
-  { status: "inbox", title: "Inbox" },
-  { status: "evaluating", title: "Evaluating" },
-  { status: "experiment", title: "Experiment" },
-  { status: "launched", title: "Launched" },
-  { status: "killed", title: "Killed" },
+type Idea = {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  avgScore: number | null;
+};
+
+type Team = {
+  id: string;
+  name: string;
+};
+
+const columns = [
+  { id: "inbox", label: "Inbox", color: "#6B7280" },
+  { id: "evaluating", label: "Evaluating", color: "#F59E0B" },
+  { id: "approved", label: "Approved", color: "#8B5CF6" },
+  { id: "in_progress", label: "In Progress", color: "#3B82F6" },
+  { id: "completed", label: "Completed", color: "#10B981" },
+  { id: "killed", label: "Killed", color: "#EF4444" },
 ];
 
-export default function BoardPage() {
-  const { ideas, updateIdeaStatus } = useIdeasStore();
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null);
-  const [killReason, setKillReason] = useState("");
-  const [showKillModal, setShowKillModal] = useState(false);
-  const [pendingKillId, setPendingKillId] = useState<string | null>(null);
+const priorityColors: Record<string, string> = {
+  low: "#6B7280",
+  medium: "#F59E0B",
+  high: "#F97316",
+  urgent: "#EF4444",
+};
 
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggedId(id);
-    e.dataTransfer.effectAllowed = "move";
+// Sortable Card Component
+function SortableCard({ idea }: { idea: Idea }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: idea.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
   };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  };
-
-  const handleDrop = (e: React.DragEvent, status: IdeaStatus) => {
-    e.preventDefault();
-    if (!draggedId) return;
-
-    if (status === "killed") {
-      setPendingKillId(draggedId);
-      setShowKillModal(true);
-    } else {
-      updateIdeaStatus(draggedId, status);
-    }
-    setDraggedId(null);
-  };
-
-  const handleConfirmKill = () => {
-    if (pendingKillId) {
-      updateIdeaStatus(pendingKillId, "killed");
-      // TODO: Save kill reason to postMortem
-      setShowKillModal(false);
-      setKillReason("");
-      setPendingKillId(null);
-    }
-  };
-
-  const getColumnIdeas = (status: IdeaStatus) =>
-    ideas.filter((idea) => idea.status === status);
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-[var(--border)]">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">Pipeline Board</h1>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="bg-[var(--bg-elevated)] p-3 rounded-lg border border-[var(--border)] cursor-grab active:cursor-grabbing hover:border-[var(--accent)]/50 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">
+          {idea.title}
+        </h4>
+        {idea.avgScore !== null && (
+          <span className="text-xs px-1.5 py-0.5 rounded bg-[var(--accent)]/10 text-[var(--accent)] flex-shrink-0">
+            {idea.avgScore}%
+          </span>
+        )}
+      </div>
+      {idea.description && (
+        <p className="text-xs text-[var(--text-tertiary)] line-clamp-2 mb-2">
+          {idea.description}
+        </p>
+      )}
+      <div className="flex items-center gap-1">
+        <div
+          className="w-2 h-2 rounded-full"
+          style={{ backgroundColor: priorityColors[idea.priority] || "#6B7280" }}
+        />
+        <span className="text-xs text-[var(--text-tertiary)] capitalize">
+          {idea.priority}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// Card for DragOverlay
+function DragCard({ idea }: { idea: Idea }) {
+  return (
+    <div className="bg-[var(--bg-elevated)] p-3 rounded-lg border-2 border-[var(--accent)] shadow-lg cursor-grabbing">
+      <h4 className="text-sm font-medium text-[var(--text-primary)] line-clamp-2">
+        {idea.title}
+      </h4>
+    </div>
+  );
+}
+
+export default function BoardPage() {
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [currentTeamId, setCurrentTeamId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeIdea, setActiveIdea] = useState<Idea | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
+
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  useEffect(() => {
+    if (currentTeamId) {
+      fetchIdeas(currentTeamId);
+    }
+  }, [currentTeamId]);
+
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch("/api/teams");
+      const data = await res.json();
+      if (res.ok && data.teams) {
+        setTeams(data.teams);
+        if (data.teams.length > 0) {
+          setCurrentTeamId(data.teams[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch teams:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchIdeas = async (teamId: string) => {
+    try {
+      const res = await fetch(`/api/ideas?teamId=${teamId}`);
+      const data = await res.json();
+      if (res.ok && data.ideas) {
+        setIdeas(data.ideas);
+      }
+    } catch (error) {
+      console.error("Failed to fetch ideas:", error);
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const idea = ideas.find((i) => i.id === event.active.id);
+    if (idea) {
+      setActiveIdea(idea);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveIdea(null);
+
+    if (!over) return;
+
+    const ideaId = active.id as string;
+    const newStatus = over.id as string;
+
+    // Find the idea
+    const idea = ideas.find((i) => i.id === ideaId);
+    if (!idea || idea.status === newStatus) return;
+
+    // Optimistic update
+    setIdeas((prev) =>
+      prev.map((i) => (i.id === ideaId ? { ...i, status: newStatus } : i))
+    );
+
+    // API update
+    try {
+      const res = await fetch(`/api/ideas/${ideaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+
+      if (!res.ok) {
+        // Revert on error
+        setIdeas((prev) =>
+          prev.map((i) => (i.id === ideaId ? { ...i, status: idea.status } : i))
+        );
+      }
+    } catch {
+      // Revert on error
+      setIdeas((prev) =>
+        prev.map((i) => (i.id === ideaId ? { ...i, status: idea.status } : i))
+      );
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <div className="animate-pulse text-[var(--text-tertiary)]">Loading...</div>
+      </div>
+    );
+  }
+
+  if (teams.length === 0) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-screen">
+        <p className="text-[var(--text-secondary)]">
+          Create a team first to view the board
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-8 h-screen flex flex-col">
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-[var(--text-primary)] mb-1">
+          Board
+        </h1>
         <p className="text-sm text-[var(--text-secondary)]">
           Drag ideas between columns to update their status
         </p>
       </div>
 
-      {/* Board */}
-      <div className="flex-1 overflow-x-auto p-6">
-        <div className="flex gap-4 h-full min-w-max">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex-1 flex gap-4 overflow-x-auto pb-4">
           {columns.map((column) => {
-            const columnIdeas = getColumnIdeas(column.status);
+            const columnIdeas = ideas.filter((i) => i.status === column.id);
             return (
               <div
-                key={column.status}
-                className="w-72 flex flex-col bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)]"
-                onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, column.status)}
+                key={column.id}
+                className="flex-shrink-0 w-72 flex flex-col bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)]"
               >
-                {/* Column header */}
-                <div className="p-4 border-b border-[var(--border)]">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{ background: statusConfig[column.status].color }}
-                      />
-                      <span className="text-sm font-medium text-[var(--text-primary)]">
-                        {column.title}
-                      </span>
-                    </div>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-surface)] text-[var(--text-tertiary)]">
-                      {columnIdeas.length}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Column content */}
-                <div className="flex-1 p-3 space-y-2 overflow-y-auto">
-                  {columnIdeas.map((idea) => (
+                {/* Column Header */}
+                <div className="p-3 border-b border-[var(--border)] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
                     <div
-                      key={idea.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, idea.id)}
-                      onClick={() => setSelectedIdea(idea)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all
-                        ${draggedId === idea.id
-                          ? "opacity-50 border-[var(--accent)] bg-[var(--accent)]/5"
-                          : "border-[var(--border)] bg-[var(--bg-surface)] hover:border-[var(--border-hover)]"
-                        }`}
-                    >
-                      <h3 className="text-sm font-medium text-[var(--text-primary)] mb-1">
-                        {idea.title}
-                      </h3>
-                      <p className="text-xs text-[var(--text-tertiary)] line-clamp-2 mb-2">
-                        {idea.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          {idea.tags.slice(0, 2).map((tag) => (
-                            <span
-                              key={tag}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--bg-hover)] text-[var(--text-tertiary)]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                        {idea.avgScore && (
-                          <span className="text-xs font-medium text-[var(--accent)]">
-                            {idea.avgScore}%
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-
-                  {columnIdeas.length === 0 && (
-                    <div className="flex items-center justify-center h-24 text-xs text-[var(--text-tertiary)] border-2 border-dashed border-[var(--border)] rounded-lg">
-                      Drop ideas here
-                    </div>
-                  )}
+                      className="w-2 h-2 rounded-full"
+                      style={{ backgroundColor: column.color }}
+                    />
+                    <h3 className="text-sm font-medium text-[var(--text-primary)]">
+                      {column.label}
+                    </h3>
+                  </div>
+                  <span className="text-xs text-[var(--text-tertiary)] bg-[var(--bg-hover)] px-2 py-0.5 rounded-full">
+                    {columnIdeas.length}
+                  </span>
                 </div>
+
+                {/* Droppable Area */}
+                <SortableContext
+                  id={column.id}
+                  items={columnIdeas.map((i) => i.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="flex-1 p-2 space-y-2 min-h-[200px] overflow-y-auto">
+                    {columnIdeas.map((idea) => (
+                      <SortableCard key={idea.id} idea={idea} />
+                    ))}
+                    {columnIdeas.length === 0 && (
+                      <div className="h-full flex items-center justify-center text-xs text-[var(--text-tertiary)] py-8">
+                        Drop ideas here
+                      </div>
+                    )}
+                  </div>
+                </SortableContext>
               </div>
             );
           })}
         </div>
-      </div>
 
-      {/* Idea detail modal */}
-      {selectedIdea && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)] w-full max-w-lg mx-4 overflow-hidden">
-            <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
-              <h2 className="text-base font-medium text-[var(--text-primary)]">
-                {selectedIdea.title}
-              </h2>
-              <button
-                onClick={() => setSelectedIdea(null)}
-                className="text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                  Description
-                </label>
-                <p className="text-sm text-[var(--text-secondary)] mt-1">
-                  {selectedIdea.description}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <div>
-                  <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                    Status
-                  </label>
-                  <p
-                    className="text-sm font-medium mt-1"
-                    style={{ color: statusConfig[selectedIdea.status].color }}
-                  >
-                    {statusConfig[selectedIdea.status].label}
-                  </p>
-                </div>
-                {selectedIdea.avgScore && (
-                  <div>
-                    <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                      Score
-                    </label>
-                    <p className="text-sm font-medium text-[var(--accent)] mt-1">
-                      {selectedIdea.avgScore}%
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                    Evaluations
-                  </label>
-                  <p className="text-sm text-[var(--text-secondary)] mt-1">
-                    {selectedIdea.evaluations.length}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                  Tags
-                </label>
-                <div className="flex items-center gap-2 mt-1">
-                  {selectedIdea.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-2 py-1 rounded-full bg-[var(--bg-surface)] text-[var(--text-tertiary)] border border-[var(--border)]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                  Move to
-                </label>
-                <div className="flex items-center gap-2 mt-2">
-                  {columns.map((col) => (
-                    <button
-                      key={col.status}
-                      onClick={() => {
-                        if (col.status === "killed") {
-                          setPendingKillId(selectedIdea.id);
-                          setShowKillModal(true);
-                          setSelectedIdea(null);
-                        } else {
-                          updateIdeaStatus(selectedIdea.id, col.status);
-                          setSelectedIdea(null);
-                        }
-                      }}
-                      disabled={selectedIdea.status === col.status}
-                      className={`px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                        selectedIdea.status === col.status
-                          ? "bg-[var(--accent)]/10 text-[var(--accent)]"
-                          : "bg-[var(--bg-surface)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] border border-[var(--border)]"
-                      }`}
-                    >
-                      {col.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Kill modal */}
-      {showKillModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--bg-elevated)] rounded-xl border border-[var(--border)] w-full max-w-md mx-4">
-            <div className="p-4 border-b border-[var(--border)]">
-              <h2 className="text-base font-medium text-[var(--text-primary)]">
-                Kill this idea?
-              </h2>
-              <p className="text-sm text-[var(--text-secondary)] mt-1">
-                Document why you&apos;re killing this idea for future reference.
-              </p>
-            </div>
-            <div className="p-4 space-y-4">
-              <div>
-                <label className="text-xs text-[var(--text-tertiary)] uppercase tracking-wide">
-                  Reason for killing
-                </label>
-                <textarea
-                  value={killReason}
-                  onChange={(e) => setKillReason(e.target.value)}
-                  placeholder="e.g., Market too small, timing not right, team doesn't have skills..."
-                  className="input mt-2 min-h-[100px] resize-none"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleConfirmKill}
-                  className="flex-1 py-2.5 rounded-lg text-sm font-medium bg-[var(--red)] text-white hover:bg-[var(--red)]/90 transition-colors"
-                >
-                  Kill idea
-                </button>
-                <button
-                  onClick={() => {
-                    setShowKillModal(false);
-                    setKillReason("");
-                    setPendingKillId(null);
-                  }}
-                  className="flex-1 btn-secondary"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+        <DragOverlay>
+          {activeIdea ? <DragCard idea={activeIdea} /> : null}
+        </DragOverlay>
+      </DndContext>
     </div>
   );
 }
-

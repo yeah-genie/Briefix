@@ -1,231 +1,270 @@
--- SeedLab Database Schema for Supabase
+-- ============================================
+-- Briefix Database Schema
+-- ============================================
 
 -- Enable UUID extension
-create extension if not exists "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Users table (extends Supabase auth.users)
-create table public.profiles (
-  id uuid references auth.users on delete cascade primary key,
-  email text unique not null,
-  name text,
-  avatar_url text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- ============================================
+-- 1. PROFILES (사용자 프로필)
+-- ============================================
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL,
+  full_name TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Workspaces
-create table public.workspaces (
-  id uuid default uuid_generate_v4() primary key,
-  name text not null,
-  created_by uuid references public.profiles(id) on delete set null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Profiles RLS
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own profile"
+  ON profiles FOR SELECT
+  USING (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Auto-create profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    NEW.raw_user_meta_data->>'full_name',
+    NEW.raw_user_meta_data->>'avatar_url'
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================
+-- 2. TEAMS (팀/워크스페이스)
+-- ============================================
+CREATE TABLE IF NOT EXISTS teams (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  owner_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Workspace members
-create table public.workspace_members (
-  workspace_id uuid references public.workspaces(id) on delete cascade,
-  user_id uuid references public.profiles(id) on delete cascade,
-  role text default 'member' check (role in ('owner', 'admin', 'member')),
-  joined_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  primary key (workspace_id, user_id)
+-- Teams RLS
+ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- 3. TEAM MEMBERS (팀 멤버)
+-- ============================================
+CREATE TABLE IF NOT EXISTS team_members (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  team_id UUID REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
+  joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(team_id, user_id)
 );
 
--- Ideas
-create table public.ideas (
-  id uuid default uuid_generate_v4() primary key,
-  workspace_id uuid references public.workspaces(id) on delete cascade not null,
-  title text not null,
-  description text,
-  tags text[] default '{}',
-  status text default 'inbox' check (status in ('inbox', 'evaluating', 'experiment', 'launched', 'killed')),
-  avg_score integer,
-  created_by uuid references public.profiles(id) on delete set null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  linked_issue_url text
+-- Team Members RLS
+ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Team members can view their team's members"
+  ON team_members FOR SELECT
+  USING (
+    user_id = auth.uid() OR 
+    team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "Team owners and admins can manage members"
+  ON team_members FOR ALL
+  USING (
+    team_id IN (
+      SELECT team_id FROM team_members 
+      WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+    )
+  );
+
+-- Teams policies (after team_members exists)
+CREATE POLICY "Team members can view their teams"
+  ON teams FOR SELECT
+  USING (
+    id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "Users can create teams"
+  ON teams FOR INSERT
+  WITH CHECK (owner_id = auth.uid());
+
+CREATE POLICY "Team owners can update their teams"
+  ON teams FOR UPDATE
+  USING (owner_id = auth.uid());
+
+CREATE POLICY "Team owners can delete their teams"
+  ON teams FOR DELETE
+  USING (owner_id = auth.uid());
+
+-- ============================================
+-- 4. IDEAS (아이디어)
+-- ============================================
+CREATE TABLE IF NOT EXISTS ideas (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  team_id UUID REFERENCES teams(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT NOT NULL DEFAULT 'inbox' CHECK (status IN ('inbox', 'evaluating', 'approved', 'in_progress', 'completed', 'killed')),
+  priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
+  tags TEXT[] DEFAULT '{}',
+  created_by UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  assigned_to UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  kill_reason TEXT, -- 왜 안했는지 기록 (킬 로그)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Evaluations
-create table public.evaluations (
-  id uuid default uuid_generate_v4() primary key,
-  idea_id uuid references public.ideas(id) on delete cascade not null,
-  evaluator_id uuid references public.profiles(id) on delete set null,
-  market_score integer check (market_score >= 1 and market_score <= 5),
-  revenue_score integer check (revenue_score >= 1 and revenue_score <= 5),
-  effort_score integer check (effort_score >= 1 and effort_score <= 5),
-  team_fit_score integer check (team_fit_score >= 1 and team_fit_score <= 5),
-  learning_score integer check (learning_score >= 1 and learning_score <= 5),
-  comment text,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Ideas RLS
+ALTER TABLE ideas ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Team members can view ideas"
+  ON ideas FOR SELECT
+  USING (
+    team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "Team members can create ideas"
+  ON ideas FOR INSERT
+  WITH CHECK (
+    team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "Team members can update ideas"
+  ON ideas FOR UPDATE
+  USING (
+    team_id IN (SELECT team_id FROM team_members WHERE user_id = auth.uid())
+  );
+
+CREATE POLICY "Team admins and owners can delete ideas"
+  ON ideas FOR DELETE
+  USING (
+    team_id IN (
+      SELECT team_id FROM team_members 
+      WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+    )
+  );
+
+-- ============================================
+-- 5. EVALUATIONS (아이디어 평가)
+-- ============================================
+CREATE TABLE IF NOT EXISTS evaluations (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  idea_id UUID REFERENCES ideas(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  market_fit INTEGER CHECK (market_fit >= 1 AND market_fit <= 10),
+  effort INTEGER CHECK (effort >= 1 AND effort <= 10),
+  team_fit INTEGER CHECK (team_fit >= 1 AND team_fit <= 10),
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(idea_id, user_id) -- 한 사람당 한 아이디어에 하나의 평가만
 );
 
--- Post mortems (kill log)
-create table public.post_mortems (
-  id uuid default uuid_generate_v4() primary key,
-  idea_id uuid references public.ideas(id) on delete cascade not null unique,
-  reason text not null,
-  learnings text,
-  would_reconsider_when text,
-  created_by uuid references public.profiles(id) on delete set null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+-- Evaluations RLS
+ALTER TABLE evaluations ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Team members can view evaluations"
+  ON evaluations FOR SELECT
+  USING (
+    idea_id IN (
+      SELECT id FROM ideas WHERE team_id IN (
+        SELECT team_id FROM team_members WHERE user_id = auth.uid()
+      )
+    )
+  );
+
+CREATE POLICY "Users can create their own evaluations"
+  ON evaluations FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update their own evaluations"
+  ON evaluations FOR UPDATE
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete their own evaluations"
+  ON evaluations FOR DELETE
+  USING (user_id = auth.uid());
+
+-- ============================================
+-- 6. EXPERIMENTS (실험 추적)
+-- ============================================
+CREATE TABLE IF NOT EXISTS experiments (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  idea_id UUID REFERENCES ideas(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  hypothesis TEXT, -- 우리가 생각하는 가설
+  success_metrics TEXT, -- 성공 기준
+  status TEXT NOT NULL DEFAULT 'planned' CHECK (status IN ('planned', 'running', 'completed', 'abandoned')),
+  result TEXT, -- 결과 요약
+  learnings TEXT, -- 배운 점
+  started_at TIMESTAMP WITH TIME ZONE,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Waitlist
-create table public.waitlist (
-  id uuid default uuid_generate_v4() primary key,
-  email text unique not null,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+-- Experiments RLS
+ALTER TABLE experiments ENABLE ROW LEVEL SECURITY;
 
--- Indexes
-create index ideas_workspace_id_idx on public.ideas(workspace_id);
-create index ideas_status_idx on public.ideas(status);
-create index evaluations_idea_id_idx on public.evaluations(idea_id);
-
--- Row Level Security (RLS)
-alter table public.profiles enable row level security;
-alter table public.workspaces enable row level security;
-alter table public.workspace_members enable row level security;
-alter table public.ideas enable row level security;
-alter table public.evaluations enable row level security;
-alter table public.post_mortems enable row level security;
-alter table public.waitlist enable row level security;
-
--- Policies
-
--- Profiles: users can read all profiles, update their own
-create policy "Profiles are viewable by authenticated users" on public.profiles
-  for select using (auth.role() = 'authenticated');
-
-create policy "Users can update own profile" on public.profiles
-  for update using (auth.uid() = id);
-
--- Workspaces: members can view their workspaces
-create policy "Workspace members can view workspace" on public.workspaces
-  for select using (
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = id and user_id = auth.uid()
+CREATE POLICY "Team members can view experiments"
+  ON experiments FOR SELECT
+  USING (
+    idea_id IN (
+      SELECT id FROM ideas WHERE team_id IN (
+        SELECT team_id FROM team_members WHERE user_id = auth.uid()
+      )
     )
   );
 
-create policy "Authenticated users can create workspaces" on public.workspaces
-  for insert with check (auth.role() = 'authenticated');
-
--- Ideas: workspace members can CRUD ideas
-create policy "Workspace members can view ideas" on public.ideas
-  for select using (
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = ideas.workspace_id and user_id = auth.uid()
+CREATE POLICY "Team members can manage experiments"
+  ON experiments FOR ALL
+  USING (
+    idea_id IN (
+      SELECT id FROM ideas WHERE team_id IN (
+        SELECT team_id FROM team_members WHERE user_id = auth.uid()
+      )
     )
   );
 
-create policy "Workspace members can create ideas" on public.ideas
-  for insert with check (
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = ideas.workspace_id and user_id = auth.uid()
-    )
-  );
+-- ============================================
+-- Helper function: Auto-add team creator as owner
+-- ============================================
+CREATE OR REPLACE FUNCTION public.handle_new_team()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.team_members (team_id, user_id, role)
+  VALUES (NEW.id, NEW.owner_id, 'owner');
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-create policy "Workspace members can update ideas" on public.ideas
-  for update using (
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = ideas.workspace_id and user_id = auth.uid()
-    )
-  );
+DROP TRIGGER IF EXISTS on_team_created ON teams;
+CREATE TRIGGER on_team_created
+  AFTER INSERT ON teams
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_team();
 
-create policy "Workspace members can delete ideas" on public.ideas
-  for delete using (
-    exists (
-      select 1 from public.workspace_members
-      where workspace_id = ideas.workspace_id and user_id = auth.uid()
-    )
-  );
-
--- Evaluations: workspace members can CRUD evaluations
-create policy "Workspace members can view evaluations" on public.evaluations
-  for select using (
-    exists (
-      select 1 from public.ideas i
-      join public.workspace_members wm on wm.workspace_id = i.workspace_id
-      where i.id = evaluations.idea_id and wm.user_id = auth.uid()
-    )
-  );
-
-create policy "Workspace members can create evaluations" on public.evaluations
-  for insert with check (
-    exists (
-      select 1 from public.ideas i
-      join public.workspace_members wm on wm.workspace_id = i.workspace_id
-      where i.id = evaluations.idea_id and wm.user_id = auth.uid()
-    )
-  );
-
--- Post mortems: same as ideas
-create policy "Workspace members can view post mortems" on public.post_mortems
-  for select using (
-    exists (
-      select 1 from public.ideas i
-      join public.workspace_members wm on wm.workspace_id = i.workspace_id
-      where i.id = post_mortems.idea_id and wm.user_id = auth.uid()
-    )
-  );
-
-create policy "Workspace members can create post mortems" on public.post_mortems
-  for insert with check (
-    exists (
-      select 1 from public.ideas i
-      join public.workspace_members wm on wm.workspace_id = i.workspace_id
-      where i.id = post_mortems.idea_id and wm.user_id = auth.uid()
-    )
-  );
-
--- Waitlist: anyone can insert, no one can read
-create policy "Anyone can join waitlist" on public.waitlist
-  for insert with check (true);
-
--- Functions
-
--- Automatically create profile on signup
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email, name)
-  values (new.id, new.email, new.raw_user_meta_data->>'name');
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
-
--- Update avg_score when evaluation is added
-create or replace function public.update_idea_avg_score()
-returns trigger as $$
-declare
-  avg_total integer;
-begin
-  select round(avg(
-    (market_score + revenue_score + (6 - effort_score) + team_fit_score + learning_score) * 100.0 / 25
-  ))
-  into avg_total
-  from public.evaluations
-  where idea_id = new.idea_id;
-  
-  update public.ideas
-  set avg_score = avg_total, updated_at = now()
-  where id = new.idea_id;
-  
-  return new;
-end;
-$$ language plpgsql security definer;
-
-create trigger on_evaluation_created
-  after insert on public.evaluations
-  for each row execute procedure public.update_idea_avg_score();
-
+-- ============================================
+-- Indexes for performance
+-- ============================================
+CREATE INDEX IF NOT EXISTS idx_ideas_team_id ON ideas(team_id);
+CREATE INDEX IF NOT EXISTS idx_ideas_status ON ideas(status);
+CREATE INDEX IF NOT EXISTS idx_ideas_created_by ON ideas(created_by);
+CREATE INDEX IF NOT EXISTS idx_evaluations_idea_id ON evaluations(idea_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id);
