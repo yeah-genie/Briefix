@@ -683,7 +683,15 @@ export default function LandingPage() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#09090b]/80 backdrop-blur-lg border-b border-white/[0.04]">
         <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
           <Link href="/" className="font-semibold text-white">Chalk</Link>
-          <span className="text-xs text-zinc-600">Teaching analytics for tutors</span>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-zinc-600 hidden sm:block">Teaching analytics for tutors</span>
+            <Link 
+              href="/beta" 
+              className="text-xs bg-amber-500/10 text-amber-400 px-3 py-1.5 rounded-lg hover:bg-amber-500/20 transition-colors"
+            >
+              Try Beta
+            </Link>
+          </div>
         </div>
       </header>
 
