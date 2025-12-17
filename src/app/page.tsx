@@ -4,19 +4,23 @@ import { useState, useEffect, useRef } from "react";
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
-// Icons
+// Icons - Actual brand logos
 function ZoomIcon() {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M4.5 4.5h10.8c1.3 0 2.4 1.1 2.4 2.4v6.6l4.5-3v7.8l-4.5-3v.3c0 1.3-1.1 2.4-2.4 2.4H4.5c-1.3 0-2.4-1.1-2.4-2.4V6.9c0-1.3 1.1-2.4 2.4-2.4z"/>
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="5" fill="#2D8CFF"/>
+      <path d="M5 8.5C5 7.67 5.67 7 6.5 7h7c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5h-7c-.83 0-1.5-.67-1.5-1.5v-5z" fill="white"/>
+      <path d="M15 10l4-2v6l-4-2v-2z" fill="white"/>
     </svg>
   );
 }
 
 function MeetIcon() {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+      <path d="M12 1.5C6.2 1.5 1.5 6.2 1.5 12S6.2 22.5 12 22.5 22.5 17.8 22.5 12 17.8 1.5 12 1.5z" fill="#00897B"/>
+      <path d="M7 9c0-.55.45-1 1-1h5c.55 0 1 .45 1 1v4c0 .55-.45 1-1 1H8c-.55 0-1-.45-1-1V9z" fill="white"/>
+      <path d="M14 10.5l3-1.5v4l-3-1.5v-1z" fill="white"/>
     </svg>
   );
 }
@@ -211,7 +215,7 @@ function HowItWorks() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-cyan-500 animate-pulse" />
-                    <p className="text-sm text-zinc-400">Analyzing "Quadratic Equations - Lesson 3"</p>
+                    <p className="text-sm text-zinc-400">Analyzing "Physics - Newton's Laws"</p>
                   </div>
                   
                   {/* Waveform centered */}
@@ -245,38 +249,42 @@ function HowItWorks() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-zinc-400">Quadratic Equations - Lesson 3</p>
-                    <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Analyzed</span>
+                    <p className="text-sm text-zinc-400">Physics - Newton's Laws</p>
+                    <span className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded">Done</span>
                   </div>
                   
                   {/* Key insight - WOW moment */}
-                  <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border border-emerald-500/20 rounded-xl">
-                    <p className="text-xs text-emerald-400 mb-2">💡 Key insight</p>
-                    <p className="text-white font-medium">
-                      Students understood the quadratic formula <span className="text-cyan-400">3x faster</span> when you drew the parabola first
+                  <div className="p-3 bg-gradient-to-r from-emerald-500/10 to-cyan-500/5 border border-emerald-500/20 rounded-lg">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-5 h-5 rounded bg-emerald-500/20 flex items-center justify-center">
+                        <svg className="w-3 h-3 text-emerald-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6z" />
+                        </svg>
+                      </div>
+                      <p className="text-xs text-emerald-400">Key insight</p>
+                    </div>
+                    <p className="text-sm text-white">
+                      Real-world demo = <span className="text-cyan-400">2.5x</span> better retention
                     </p>
-                    <p className="text-sm text-zinc-400 mt-2">
-                      At 12:34, you sketched y = x² - 4 before introducing the formula. 
-                      <span className="text-emerald-400"> 94% comprehension</span> vs 61% when starting with algebra.
+                    <p className="text-xs text-zinc-500 mt-1">
+                      Pushing a book vs. showing equations
                     </p>
                   </div>
 
-                  {/* Specific comparison */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                      <p className="text-xs text-emerald-400">What worked</p>
-                      <p className="text-sm text-zinc-300 mt-1">"Let me draw this..."</p>
-                      <p className="text-xs text-zinc-500 mt-2">Visual → Formula</p>
-                      <p className="text-lg font-semibold text-emerald-400 mt-1">94%</p>
+                  {/* Compact comparison */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2.5 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+                      <p className="text-xs text-emerald-400">Worked</p>
+                      <p className="text-sm text-zinc-300 mt-0.5">"Push this book"</p>
+                      <p className="text-lg font-semibold text-emerald-400">89%</p>
                     </div>
-                    <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                    <div className="p-2.5 bg-zinc-900/50 border border-zinc-800 rounded-lg">
                       <p className="text-xs text-zinc-500">Less effective</p>
-                      <p className="text-sm text-zinc-400 mt-1">"The formula is..."</p>
-                      <p className="text-xs text-zinc-600 mt-2">Formula first</p>
-                      <p className="text-lg font-semibold text-zinc-500 mt-1">61%</p>
+                      <p className="text-sm text-zinc-400 mt-0.5">"F = ma means..."</p>
+                      <p className="text-lg font-semibold text-zinc-500">52%</p>
                     </div>
                   </div>
                 </motion.div>
@@ -289,7 +297,40 @@ function HowItWorks() {
   );
 }
 
-// Interactive Privacy Section - shows data flow
+// Privacy icons
+function VideoIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.53v11.38a.75.75 0 01-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25h-9A2.25 2.25 0 002.25 7.5v9a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+    </svg>
+  );
+}
+
+// Interactive Privacy Section - minimal, elegant
 function PrivacySection() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
@@ -303,90 +344,80 @@ function PrivacySection() {
     return () => clearInterval(interval);
   }, [isInView]);
 
+  const steps = [
+    { label: "Upload", icon: <VideoIcon />, desc: "Connect your session" },
+    { label: "Analyze", icon: <LockIcon />, desc: "Encrypted processing" },
+    { label: "Insights", icon: <ChartIcon />, desc: "Text only, no video" },
+    { label: "Deleted", icon: <TrashIcon />, desc: "Within 24 hours" },
+  ];
+
   return (
     <div ref={ref} className="relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent rounded-2xl blur-xl" />
       <div className="relative bg-[#111] border border-zinc-800 rounded-2xl overflow-hidden">
-        <WindowHeader title="How your data flows" />
+        <WindowHeader title="Data flow" />
         
         <div className="p-8">
-          {/* Flow visualization */}
-          <div className="flex items-center justify-between mb-8">
-            {[
-              { label: "Your recording", icon: "🎥" },
-              { label: "Secure analysis", icon: "🔒" },
-              { label: "Insights only", icon: "📊" },
-              { label: "Recording deleted", icon: "🗑️" },
-            ].map((item, i) => (
-              <div key={i} className="flex flex-col items-center">
+          {/* Minimal flow */}
+          <div className="flex items-center justify-between gap-2 mb-6">
+            {steps.map((item, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center">
                 <motion.div
                   animate={{ 
-                    scale: step === i ? 1.2 : 1,
-                    opacity: step >= i ? 1 : 0.3
+                    scale: step === i ? 1.1 : 1,
+                    opacity: step >= i ? 1 : 0.4
                   }}
-                  className={`w-14 h-14 rounded-xl flex items-center justify-center text-2xl mb-2 ${
-                    step === i ? "bg-cyan-500/20 ring-2 ring-cyan-500/50" : "bg-zinc-800"
+                  transition={{ duration: 0.3 }}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${
+                    step === i 
+                      ? "bg-cyan-500/20 text-cyan-400" 
+                      : step > i 
+                        ? "bg-zinc-800 text-zinc-400" 
+                        : "bg-zinc-900 text-zinc-600"
                   }`}
                 >
                   {item.icon}
                 </motion.div>
-                <p className={`text-xs text-center ${step >= i ? "text-zinc-300" : "text-zinc-600"}`}>
+                <p className={`text-xs font-medium ${step >= i ? "text-zinc-300" : "text-zinc-600"}`}>
                   {item.label}
                 </p>
-                {i < 3 && (
-                  <motion.div 
-                    className="absolute"
-                    style={{ left: `${(i + 1) * 25 - 5}%`, top: "35%" }}
-                  >
-                    <motion.svg 
-                      width="40" height="20" 
-                      className="text-zinc-600"
-                      animate={{ opacity: step === i ? 1 : 0.3 }}
-                    >
-                      <motion.path
-                        d="M0 10 L30 10 M25 5 L30 10 L25 15"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        animate={{ pathLength: step >= i ? 1 : 0 }}
-                        transition={{ duration: 0.5 }}
-                      />
-                    </motion.svg>
-                  </motion.div>
-                )}
               </div>
             ))}
           </div>
 
-          {/* Current step description */}
-          <AnimatePresence mode="wait">
+          {/* Progress line */}
+          <div className="h-0.5 bg-zinc-800 rounded-full mb-6 overflow-hidden">
             <motion.div
-              key={step}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg text-center"
-            >
-              {step === 0 && (
-                <p className="text-zinc-300">You upload or connect your tutoring session</p>
-              )}
-              {step === 1 && (
-                <p className="text-zinc-300">AI analyzes on <span className="text-cyan-400">encrypted servers</span> — we never see the video</p>
-              )}
-              {step === 2 && (
-                <p className="text-zinc-300">Only <span className="text-cyan-400">text insights</span> are saved — timestamps, patterns, effectiveness</p>
-              )}
-              {step === 3 && (
-                <p className="text-zinc-300">Original recording is <span className="text-red-400">permanently deleted</span> within 24 hours</p>
-              )}
-            </motion.div>
-          </AnimatePresence>
+              animate={{ width: `${((step + 1) / 4) * 100}%` }}
+              transition={{ duration: 0.5 }}
+              className="h-full bg-gradient-to-r from-cyan-500 to-blue-500"
+            />
+          </div>
+
+          {/* Current step */}
+          <div className="text-center text-sm text-zinc-400 mb-6">
+            {steps[step].desc}
+          </div>
 
           {/* Trust badges */}
-          <div className="flex items-center justify-center gap-6 mt-6 text-xs text-zinc-500">
-            <span>🔐 End-to-end encrypted</span>
-            <span>✓ GDPR compliant</span>
-            <span>✓ SOC 2 Type II</span>
+          <div className="flex items-center justify-center gap-6 text-xs text-zinc-500 pt-4 border-t border-zinc-800/50">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
+              </svg>
+              Encrypted
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              GDPR
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              SOC 2
+            </span>
           </div>
         </div>
       </div>
@@ -394,7 +425,7 @@ function PrivacySection() {
   );
 }
 
-// Metrics Demo with real examples
+// Metrics Demo with real examples - Spanish lesson
 function MetricsDemo() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true });
@@ -406,74 +437,73 @@ function MetricsDemo() {
 
   return (
     <div ref={ref} className="relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-cyan-500/5 to-transparent rounded-2xl blur-xl" />
       <div className="relative bg-[#111] border border-zinc-800 rounded-2xl overflow-hidden">
-        <WindowHeader title="Session: Calculus - Derivatives Introduction" />
+        <WindowHeader title="Spanish - Past Tense Verbs" />
         
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           {/* Key moment */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={show ? { opacity: 1, y: 0 } : {}}
-            className="p-4 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl"
+            className="p-3 bg-gradient-to-r from-amber-500/10 to-orange-500/5 border border-amber-500/20 rounded-lg"
           >
-            <div className="flex items-start gap-3">
-              <span className="text-xl">⚡</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                <svg className="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                </svg>
+              </div>
               <div>
-                <p className="text-sm text-amber-200 font-medium">Breakthrough moment at 18:42</p>
-                <p className="text-xs text-zinc-400 mt-1">
-                  When you said <span className="text-white">"Think of it as the slope at any point"</span> — 
-                  student engagement spiked 340%
-                </p>
+                <p className="text-sm text-amber-200 font-medium">Breakthrough at 12:15</p>
+                <p className="text-xs text-zinc-400">"Hablar becomes hablé" — engagement +280%</p>
               </div>
             </div>
           </motion.div>
 
-          {/* Talk ratio */}
+          {/* Talk ratio - compact */}
           <div>
-            <div className="flex justify-between text-sm mb-2">
+            <div className="flex justify-between text-sm mb-1.5">
               <span className="text-zinc-500">Talk ratio</span>
-              <span className="text-zinc-300">You 68% · Student 32%</span>
+              <span className="text-zinc-400">55% / 45%</span>
             </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden flex">
+            <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden flex">
               <motion.div
                 initial={{ width: 0 }}
-                animate={show ? { width: "68%" } : {}}
+                animate={show ? { width: "55%" } : {}}
                 transition={{ duration: 1 }}
-                className="bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full"
+                className="bg-cyan-500 rounded-full"
               />
               <motion.div
                 initial={{ width: 0 }}
-                animate={show ? { width: "32%" } : {}}
+                animate={show ? { width: "45%" } : {}}
                 transition={{ duration: 1, delay: 0.2 }}
-                className="bg-emerald-500/50 rounded-full"
+                className="bg-emerald-500/60 rounded-full"
               />
             </div>
-            <p className="text-xs text-emerald-400 mt-1">✓ Great balance! Student talked 12% more than average</p>
+            <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+              Great balance
+            </p>
           </div>
 
-          {/* Comparison */}
+          {/* Comparison - compact */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={show ? { opacity: 1 } : {}}
             transition={{ delay: 0.5 }}
+            className="grid grid-cols-2 gap-2"
           >
-            <p className="text-sm text-zinc-500 mb-3">What clicked vs what didn't</p>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
-                <div>
-                  <p className="text-sm text-zinc-300">"The derivative is just the slope at a point"</p>
-                  <p className="text-xs text-zinc-500">Analogy-based explanation</p>
-                </div>
-                <span className="text-emerald-400 font-semibold">92%</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
-                <div>
-                  <p className="text-sm text-zinc-400">"lim h→0 [f(x+h) - f(x)] / h"</p>
-                  <p className="text-xs text-zinc-600">Formula-first approach</p>
-                </div>
-                <span className="text-zinc-500 font-semibold">41%</span>
-              </div>
+            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-lg">
+              <p className="text-xs text-emerald-400 mb-1">Worked</p>
+              <p className="text-sm text-zinc-300">"Sing the endings!"</p>
+              <p className="text-lg font-semibold text-emerald-400 mt-1">91%</p>
+            </div>
+            <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+              <p className="text-xs text-zinc-500 mb-1">Less effective</p>
+              <p className="text-sm text-zinc-400">"Memorize the chart"</p>
+              <p className="text-lg font-semibold text-zinc-500 mt-1">38%</p>
             </div>
           </motion.div>
         </div>
