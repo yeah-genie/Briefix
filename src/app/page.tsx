@@ -4,30 +4,311 @@ import { useState, useEffect, useRef } from "react";
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
+// Section wrapper with scroll animation
+function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  return (
+    <motion.section
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+      className={className}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+// Feature section component
+function FeatureSection({ 
+  label, 
+  title, 
+  description, 
+  children 
+}: { 
+  label: string;
+  title: string;
+  description: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <Section className="min-h-[70vh] flex items-center py-32 px-6">
+      <div className="max-w-5xl mx-auto w-full">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="text-xs text-violet-400 font-medium mb-4 tracking-wide uppercase">
+              {label}
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-semibold text-white leading-tight mb-4">
+              {title}
+            </h2>
+            <p className="text-lg text-zinc-400 leading-relaxed">
+              {description}
+            </p>
+          </div>
+          <div className="lg:pl-8">
+            {children}
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+// Validate Demo - Course idea validation
+function ValidateDemo() {
+  const [phase, setPhase] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!isInView) return;
+    const timers = [
+      setTimeout(() => setPhase(1), 500),
+      setTimeout(() => setPhase(2), 1200),
+      setTimeout(() => setPhase(3), 1900),
+      setTimeout(() => setPhase(4), 2600),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [isInView]);
+
+  return (
+    <div ref={ref} className="bg-[#0c0c0e] border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-zinc-800/80 bg-[#111113]">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-violet-500" />
+          <span className="text-sm text-white font-medium">Course Validator</span>
+        </div>
+      </div>
+      <div className="p-5 space-y-4">
+        <div className="flex items-center gap-3 p-3 bg-zinc-900/50 rounded-lg border border-zinc-800">
+          <span className="text-zinc-500 text-sm">Topic:</span>
+          <span className="text-white">"Python for Data Science"</span>
+        </div>
+        
+        {phase >= 1 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-zinc-400 text-sm">Demand Score</span>
+              <span className="text-emerald-400 font-semibold">82/100</span>
+            </div>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div 
+                initial={{ width: 0 }} 
+                animate={{ width: "82%" }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="h-full bg-gradient-to-r from-violet-500 to-emerald-500"
+              />
+            </div>
+          </motion.div>
+        )}
+
+        {phase >= 2 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-2 gap-3">
+            <div className="p-3 bg-zinc-900/50 rounded-lg">
+              <p className="text-xs text-zinc-500 mb-1">Competition</p>
+              <p className="text-yellow-400 font-medium">Medium</p>
+            </div>
+            <div className="p-3 bg-zinc-900/50 rounded-lg">
+              <p className="text-xs text-zinc-500 mb-1">Est. Revenue</p>
+              <p className="text-emerald-400 font-medium">$3-8K/mo</p>
+            </div>
+          </motion.div>
+        )}
+
+        {phase >= 3 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+            <p className="text-xs text-blue-400 mb-1">Niche Opportunity</p>
+            <p className="text-sm text-zinc-300">"Python for Healthcare Analytics" — only 12 courses exist</p>
+          </motion.div>
+        )}
+
+        {phase >= 4 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 pt-2">
+            <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-emerald-400 font-medium">Validated — Worth building</span>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Optimize Demo - A/B Testing visualization
+function OptimizeDemo() {
+  const [phase, setPhase] = useState(0);
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  useEffect(() => {
+    if (!isInView) return;
+    const timers = [
+      setTimeout(() => setPhase(1), 500),
+      setTimeout(() => setPhase(2), 1500),
+      setTimeout(() => setPhase(3), 2500),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, [isInView]);
+
+  return (
+    <div ref={ref} className="bg-[#0c0c0e] border border-zinc-800 rounded-xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-zinc-800/80 bg-[#111113]">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="text-sm text-white font-medium">Lesson Experiment</span>
+          </div>
+          <span className="text-xs text-zinc-500">Running for 7 days</span>
+        </div>
+      </div>
+      <div className="p-5 space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className={`p-4 rounded-lg border transition-all ${phase >= 2 ? 'bg-zinc-900/30 border-zinc-700' : 'bg-zinc-900/50 border-zinc-800'}`}>
+            <p className="text-xs text-zinc-500 mb-2">Version A</p>
+            <p className="text-sm text-zinc-300 mb-3">Original intro</p>
+            {phase >= 1 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <p className="text-2xl font-semibold text-white">42%</p>
+                <p className="text-xs text-zinc-500">completion</p>
+              </motion.div>
+            )}
+          </div>
+          <div className={`p-4 rounded-lg border transition-all ${phase >= 2 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-zinc-900/50 border-zinc-800'}`}>
+            <p className="text-xs text-zinc-500 mb-2">Version B</p>
+            <p className="text-sm text-zinc-300 mb-3">Story-based intro</p>
+            {phase >= 1 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <p className="text-2xl font-semibold text-emerald-400">67%</p>
+                <p className="text-xs text-zinc-500">completion</p>
+              </motion.div>
+            )}
+          </div>
+        </div>
+
+        {phase >= 2 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-center gap-2 py-2">
+            <span className="text-emerald-400 font-semibold">+59%</span>
+            <span className="text-zinc-400 text-sm">improvement</span>
+            <span className="text-xs text-zinc-600 ml-2">• 95% confidence</span>
+          </motion.div>
+        )}
+
+        {phase >= 3 && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-3 bg-violet-500/10 border border-violet-500/20 rounded-lg">
+            <p className="text-sm text-violet-300">
+              <span className="font-medium">Recommendation:</span> Apply Version B to all students
+            </p>
+          </motion.div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Analytics Demo - Completion insights
+function AnalyticsDemo() {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+
+  const lessons = [
+    { name: "Intro", completion: 95, status: "good" },
+    { name: "Setup", completion: 88, status: "good" },
+    { name: "Basics", completion: 76, status: "warning" },
+    { name: "Advanced", completion: 34, status: "danger" },
+    { name: "Project", completion: 28, status: "danger" },
+  ];
+
+  return (
+    <div ref={ref}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={isInView ? { opacity: 1, y: 0 } : {}}
+        className="bg-[#0c0c0e] border border-zinc-800 rounded-xl overflow-hidden"
+      >
+        <div className="px-5 py-4 border-b border-zinc-800/80 bg-[#111113]">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-white font-medium">Completion Funnel</span>
+            <span className="text-xs text-zinc-500">Last 30 days</span>
+          </div>
+        </div>
+        <div className="p-5 space-y-3">
+          {lessons.map((lesson, i) => (
+            <motion.div
+              key={lesson.name}
+              initial={{ opacity: 0, x: -10 }}
+              animate={isInView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: 0.1 * i }}
+              className="flex items-center gap-3"
+            >
+              <span className="text-xs text-zinc-500 w-16">{lesson.name}</span>
+              <div className="flex-1 h-6 bg-zinc-800/50 rounded overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={isInView ? { width: `${lesson.completion}%` } : {}}
+                  transition={{ duration: 0.8, delay: 0.1 * i }}
+                  className={`h-full ${
+                    lesson.status === "good" ? "bg-emerald-500/80" :
+                    lesson.status === "warning" ? "bg-yellow-500/80" :
+                    "bg-red-500/80"
+                  }`}
+                />
+              </div>
+              <span className={`text-sm font-medium w-10 text-right ${
+                lesson.status === "good" ? "text-emerald-400" :
+                lesson.status === "warning" ? "text-yellow-400" :
+                "text-red-400"
+              }`}>
+                {lesson.completion}%
+              </span>
+            </motion.div>
+          ))}
+        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ delay: 0.6 }}
+          className="px-5 py-4 bg-red-500/5 border-t border-red-500/10"
+        >
+          <p className="text-sm text-red-300">
+            <span className="font-medium">Issue detected:</span> 55% drop at "Advanced" lesson — consider splitting into 2 parts
+          </p>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+}
+
 // FAQ Accordion Component
 function FAQAccordion() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   
   const faqs = [
     {
-      q: "Is it really zero input?",
-      a: "Yes. Once you connect your tools, we watch your deploys and pull metrics automatically. You don't need to log experiments, tag commits, or fill out forms. Just ship code like you always do."
+      q: "How does course validation work?",
+      a: "We analyze search trends, competitor courses, reviews, and community discussions to score your course idea's potential. You'll see demand score, competition level, niche opportunities, and revenue estimates before you spend months creating content."
     },
     {
-      q: "What data sources do you use?",
-      a: "We connect to GitHub (code changes), Vercel (deployments), and your analytics tool (Google Analytics, Mixpanel, Amplitude, etc.). We compare metrics before and after each deploy to detect impact."
+      q: "Which platforms do you integrate with?",
+      a: "We currently support Teachable, Thinkific, and Kajabi. More platforms coming soon including Podia, Gumroad, and custom solutions. No SDK or code changes required — just OAuth connection."
     },
     {
-      q: "Do I need to install an SDK?",
-      a: "No SDK required. We use OAuth to connect to your existing tools. No code changes, no new dependencies, no deployment pipeline modifications."
+      q: "How does A/B testing work for courses?",
+      a: "You upload two versions of a lesson (different intro, different length, different format). We randomly show each version to students and measure completion rate, engagement, and satisfaction. When we reach statistical significance, we tell you the winner."
     },
     {
-      q: "How accurate is the automatic detection?",
-      a: "We track file changes per deploy and correlate them with metric changes. For most product changes, this works well. For complex multi-feature deploys, we'll ask you to confirm what changed."
+      q: "Is my course content safe?",
+      a: "We never access or store your actual video content. We only analyze behavioral data — when students start, pause, skip, or complete lessons. Your intellectual property stays on your platform."
     },
     {
-      q: "What if I want to track something manually?",
-      a: "You can always add manual experiments or override our auto-detection. But most teams find they don't need to — we catch everything automatically."
+      q: "How long until I see results?",
+      a: "Course validation is instant. For A/B tests, it depends on your traffic — typically 1-2 weeks with 100+ daily students. We'll tell you the minimum sample size needed for reliable results."
     },
   ];
 
@@ -71,306 +352,10 @@ function FAQAccordion() {
   );
 }
 
-// Section wrapper with scroll animation
-function Section({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
-
-  return (
-    <motion.section
-      ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={isInView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-      className={className}
-    >
-      {children}
-    </motion.section>
-  );
-}
-
-// Feature section component
-function FeatureSection({ 
-  label, 
-  title, 
-  description, 
-  children 
-}: { 
-  label: string;
-  title: string;
-  description: string;
-  children?: React.ReactNode;
-}) {
-  return (
-    <Section className="min-h-[70vh] flex items-center py-32 px-6">
-      <div className="max-w-5xl mx-auto w-full">
-        <div className="grid lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <div className="text-xs text-blue-400 font-medium mb-4 tracking-wide uppercase">
-              {label}
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-semibold text-white leading-tight mb-4">
-              {title}
-            </h2>
-            <p className="text-lg text-zinc-400 leading-relaxed">
-              {description}
-            </p>
-          </div>
-          <div className="lg:pl-8">
-            {children}
-          </div>
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-// Tool icons
-function GitHubIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-    </svg>
-  );
-}
-
-function VercelIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M24 22.525H0l12-21.05 12 21.05z"/>
-    </svg>
-  );
-}
-
-function GoogleAnalyticsIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M22.84 2.998v17.998c0 1.66-1.34 3.004-3 3.004-1.66 0-3-1.344-3-3.004V2.998c0-1.656 1.34-3 3-3 1.66 0 3 1.344 3 3zM6 13.998v7.002c0 1.656-1.34 3-3 3s-3-1.344-3-3v-7.002c0-1.659 1.34-3.003 3-3.003s3 1.344 3 3.003zm8.5-4.5v11.498c0 1.66-1.34 3.004-3 3.004s-3-1.344-3-3.004V9.498c0-1.656 1.34-3 3-3s3 1.344 3 3z"/>
-    </svg>
-  );
-}
-
-function SlackIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
-    </svg>
-  );
-}
-
-function MixpanelIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm0 4.8a7.2 7.2 0 110 14.4 7.2 7.2 0 010-14.4z"/>
-    </svg>
-  );
-}
-
-function AmplitudeIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-      <path d="M12 2L2 19.5h20L12 2zm0 4l7 12H5l7-12z"/>
-    </svg>
-  );
-}
-
-// Connect animation - shows what it does after connecting
-function ConnectDemo() {
-  const [phase, setPhase] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  const tools = [
-    { name: "GitHub", icon: <GitHubIcon />, status: "Watching code changes..." },
-    { name: "Vercel", icon: <VercelIcon />, status: "Tracking deploys..." },
-    { name: "Google Analytics", icon: <GoogleAnalyticsIcon />, status: "Monitoring conversions..." },
-    { name: "Slack", icon: <SlackIcon />, status: "Ready for alerts..." },
-    { name: "Mixpanel", icon: <MixpanelIcon />, status: "Syncing events..." },
-    { name: "Amplitude", icon: <AmplitudeIcon />, status: "Pulling metrics..." },
-  ];
-
-  useEffect(() => {
-    if (!isInView) return;
-    const timers = tools.map((_, i) => 
-      setTimeout(() => setPhase(i + 1), 300 * (i + 1))
-    );
-    return () => timers.forEach(clearTimeout);
-  }, [isInView]);
-
-  return (
-    <div ref={ref} className="grid grid-cols-2 gap-2">
-      {tools.map((tool, i) => (
-        <motion.div
-          key={tool.name}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={isInView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ delay: i * 0.08 }}
-          className={`flex items-center gap-3 p-3 rounded-lg border transition-all duration-400 ${
-            phase > i 
-              ? "bg-emerald-500/5 border-emerald-500/20" 
-              : "bg-zinc-900/50 border-zinc-800"
-          }`}
-        >
-          <div className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-400 ${
-            phase > i ? "bg-white text-black" : "bg-zinc-800 text-zinc-500"
-          }`}>
-            {tool.icon}
-          </div>
-          <div className="flex-1 min-w-0">
-            <span className="text-sm text-white block">{tool.name}</span>
-            {phase > i && (
-              <motion.span 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-[10px] text-emerald-400 block"
-              >
-                {tool.status}
-              </motion.span>
-            )}
-          </div>
-          {phase > i && (
-            <motion.div 
-              initial={{ scale: 0 }} 
-              animate={{ scale: 1 }}
-              className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0"
-            >
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            </motion.div>
-          )}
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-// Ship animation - shows auto detection
-function ShipDemo() {
-  const [phase, setPhase] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  useEffect(() => {
-    if (!isInView) return;
-    const timers = [
-      setTimeout(() => setPhase(1), 500),
-      setTimeout(() => setPhase(2), 1200),
-      setTimeout(() => setPhase(3), 1900),
-      setTimeout(() => setPhase(4), 2600),
-    ];
-    return () => timers.forEach(clearTimeout);
-  }, [isInView]);
-
-  return (
-    <div ref={ref} className="bg-[#0c0c0e] border border-zinc-800 rounded-xl overflow-hidden">
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-zinc-800/80 bg-[#111113]">
-        <div className="flex gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
-          <div className="w-3 h-3 rounded-full bg-[#febc2e]" />
-          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
-        </div>
-        <span className="text-xs text-zinc-500 ml-2">Terminal</span>
-      </div>
-      <div className="p-5 font-mono text-sm space-y-1.5">
-        <p className="text-zinc-500">$ git push origin main</p>
-        {phase >= 1 && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-zinc-400">
-            Writing objects: 100% (42/42), done.
-          </motion.p>
-        )}
-        {phase >= 2 && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-400">
-            ✓ Deployed to production
-          </motion.p>
-        )}
-        {phase >= 3 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-2 space-y-1">
-            <p className="text-blue-400">Briefix detected:</p>
-            <p className="text-zinc-400 pl-4">pricing.tsx changed</p>
-            <p className="text-zinc-400 pl-4">Tracking: Conversion rate</p>
-          </motion.div>
-        )}
-        {phase >= 4 && (
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-violet-400 pl-4">
-            Auto-hypothesis: "Price change → Signup impact"
-          </motion.p>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// Learn animation - Weekly report style
-function LearnDemo() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  return (
-    <div ref={ref}>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden"
-      >
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-zinc-800/80 bg-zinc-900/80">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-zinc-500">Weekly Report</p>
-              <p className="text-white font-medium">Dec 9 - 15</p>
-            </div>
-            <div className="text-xs text-zinc-500">Auto-generated</div>
-          </div>
-        </div>
-
-        {/* Experiments */}
-        <div className="p-5 space-y-3">
-          <p className="text-xs text-zinc-500 uppercase tracking-wide">This week's experiments</p>
-          
-          {[
-            { name: "Checkout redesign", result: "+50% conversion", success: true },
-            { name: "New pricing page", result: "+33% signups", success: true },
-            { name: "CTA button color", result: "No change", success: false },
-          ].map((exp, i) => (
-            <motion.div
-              key={exp.name}
-              initial={{ opacity: 0, x: -10 }}
-              animate={isInView ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.3 + i * 0.1 }}
-              className="flex items-center justify-between py-2"
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-600">├─</span>
-                <span className="text-zinc-300">{exp.name}</span>
-              </div>
-              <span className={`text-sm font-medium ${exp.success ? "text-emerald-400" : "text-zinc-500"}`}>
-                {exp.result} {exp.success && "✓"}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Insight */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ delay: 0.7 }}
-          className="px-5 py-4 bg-blue-500/5 border-t border-blue-500/10"
-        >
-          <p className="text-sm text-blue-300">
-            <span className="font-medium">Pattern:</span> UX flow changes beat color tweaks
-          </p>
-        </motion.div>
-      </motion.div>
-    </div>
-  );
-}
-
 export default function LandingPage() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [waitlistCount, setWaitlistCount] = useState(247);
+  const [waitlistCount, setWaitlistCount] = useState(127);
   
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({
@@ -421,18 +406,21 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#09090b] text-white">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-blue-500/[0.07] via-violet-500/[0.03] to-transparent blur-[100px] rounded-full" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-b from-violet-500/[0.07] via-purple-500/[0.03] to-transparent blur-[100px] rounded-full" />
       </div>
 
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-[#09090b]/80 backdrop-blur-lg border-b border-white/[0.04]">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="font-semibold text-white">
-            Briefix
+          <Link href="/" className="font-semibold text-white flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white font-bold text-xs">C</span>
+            </div>
+            CourseOS
           </Link>
           <div className="flex items-center gap-4">
             <Link href="/app" className="text-sm bg-white text-black font-medium px-4 py-1.5 rounded-md hover:bg-zinc-200 transition-colors">
-              Try Slack demo
+              Try demo
             </Link>
           </div>
         </div>
@@ -451,21 +439,23 @@ export default function LandingPage() {
             transition={{ duration: 0.8 }}
           >
             <div className="inline-flex items-center gap-2 text-xs text-zinc-400 border border-zinc-800 rounded-full px-3 py-1.5 mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Zero-effort experiment tracking
+              <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+              For online course creators
             </div>
             
             <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.1] tracking-tight mb-6">
-              Experiments
+              Stop guessing.
               <br />
-              track themselves.
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-purple-400">
+                Start knowing.
+              </span>
             </h1>
             
             <p className="text-xl text-zinc-400 leading-relaxed mb-10 max-w-lg mx-auto">
-              Connect your stack once. Zero input from you — we watch deploys, compare metrics, and tell you what worked.
+              Validate ideas before you build. Optimize courses after you launch. Data-driven course creation, from start to finish.
             </p>
 
-            {/* Email form in Hero */}
+            {/* Email form */}
             {status === "success" ? (
               <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -473,7 +463,7 @@ export default function LandingPage() {
                 className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 max-w-md mx-auto"
               >
                 <p className="text-emerald-400 font-medium mb-1">You're on the list!</p>
-                <p className="text-sm text-zinc-400">We'll set you up with automatic experiment tracking soon.</p>
+                <p className="text-sm text-zinc-400">We'll let you know when CourseOS is ready.</p>
               </motion.div>
             ) : (
               <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
@@ -481,7 +471,7 @@ export default function LandingPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
+                  placeholder="you@example.com"
                   className="flex-1 bg-zinc-900/80 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
                   disabled={status === "loading"}
                 />
@@ -496,7 +486,7 @@ export default function LandingPage() {
             )}
             
             <p className="text-sm text-zinc-600 mt-4">
-              Join {waitlistCount}+ others. No spam, just updates.
+              Join {waitlistCount}+ course creators. No spam.
             </p>
           </motion.div>
 
@@ -518,32 +508,120 @@ export default function LandingPage() {
         </div>
       </motion.section>
 
-      {/* Feature 1: Connect */}
+      {/* Problem Statement */}
+      <Section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-2xl sm:text-3xl text-zinc-300 leading-relaxed">
+            <span className="text-white font-medium">80% of online courses fail.</span>
+            <br />
+            Creators spend months building courses nobody wants.
+            <br />
+            Then wonder why completion rates are under 10%.
+          </p>
+          <p className="text-lg text-zinc-500 mt-8">
+            You don't have a content problem. You have a data problem.
+          </p>
+        </div>
+      </Section>
+
+      {/* Feature 1: Validate */}
       <FeatureSection
-        label="Step 1"
-        title="Connect once, track forever"
-        description="Authenticate with your stack in 5 minutes. No SDK, no code changes. Once connected, we start watching everything automatically."
+        label="Before you build"
+        title="Validate ideas in seconds"
+        description="Stop guessing if your course will sell. Get demand scores, competition analysis, niche opportunities, and revenue estimates before you create a single video."
       >
-        <ConnectDemo />
+        <ValidateDemo />
       </FeatureSection>
 
-      {/* Feature 2: Ship */}
+      {/* Feature 2: Optimize */}
       <FeatureSection
-        label="Step 2"
-        title="Ship like you always do"
-        description="Just keep pushing code. We detect what changed, auto-generate hypotheses, and start tracking the right metrics. You don't lift a finger."
+        label="After you launch"
+        title="A/B test your lessons"
+        description="Find out which intro hooks students, which format keeps them engaged, and which length maximizes completion. Real experiments, real data, real improvements."
       >
-        <ShipDemo />
+        <OptimizeDemo />
       </FeatureSection>
 
-      {/* Feature 3: Learn */}
+      {/* Feature 3: Analyze */}
       <FeatureSection
-        label="Step 3"
-        title="Get weekly insights, automatically"
-        description="Every Monday, you get a report of what worked and what didn't. We spot patterns so you can double down on what matters."
+        label="Always improving"
+        title="See where students drop off"
+        description="Visualize your completion funnel. Spot problem lessons instantly. Get AI-powered recommendations to fix drop-off points and boost your course ratings."
       >
-        <LearnDemo />
+        <AnalyticsDemo />
       </FeatureSection>
+
+      {/* Social Proof / Stats */}
+      <Section className="py-24 px-6 border-y border-zinc-800/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid grid-cols-3 gap-8 text-center">
+            <div>
+              <p className="text-4xl font-bold text-white mb-2">80%</p>
+              <p className="text-sm text-zinc-500">of courses fail to profit</p>
+            </div>
+            <div>
+              <p className="text-4xl font-bold text-white mb-2">~10%</p>
+              <p className="text-sm text-zinc-500">average completion rate</p>
+            </div>
+            <div>
+              <p className="text-4xl font-bold text-white mb-2">6 mo</p>
+              <p className="text-sm text-zinc-500">average time to create</p>
+            </div>
+          </div>
+          <p className="text-center text-zinc-400 mt-8">
+            What if you could validate in minutes, not months?
+          </p>
+        </div>
+      </Section>
+
+      {/* How it works */}
+      <Section className="py-32 px-6">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-16 text-center">
+            How it works
+          </h2>
+          
+          <div className="space-y-12">
+            {[
+              {
+                step: "01",
+                title: "Enter your course idea",
+                desc: "Tell us what you want to teach. We'll analyze demand, competition, and opportunities.",
+              },
+              {
+                step: "02",
+                title: "Get your validation report",
+                desc: "See if it's worth building. Discover niches, pricing sweet spots, and potential revenue.",
+              },
+              {
+                step: "03",
+                title: "Connect your platform",
+                desc: "Link Teachable, Thinkific, or Kajabi. We start tracking student behavior automatically.",
+              },
+              {
+                step: "04",
+                title: "Run experiments, see results",
+                desc: "Test different versions. Get AI recommendations. Watch completion rates climb.",
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={item.step}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="flex gap-6"
+              >
+                <div className="text-3xl font-bold text-zinc-800">{item.step}</div>
+                <div>
+                  <h3 className="text-xl font-medium text-white mb-2">{item.title}</h3>
+                  <p className="text-zinc-400">{item.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </Section>
 
       {/* FAQ Section */}
       <Section className="py-32 px-6 border-t border-zinc-800/50">
@@ -560,10 +638,10 @@ export default function LandingPage() {
       <Section className="py-32 px-6">
         <div className="max-w-md mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-semibold text-white mb-4">
-            Ready to ship smarter?
+            Build courses that succeed
           </h2>
           <p className="text-zinc-400 mb-8">
-            Stop flying blind. Know exactly what's working.
+            Join creators who validate first, optimize always.
           </p>
 
           {status === "success" ? (
@@ -574,7 +652,7 @@ export default function LandingPage() {
                 </svg>
               </div>
               <p className="text-white font-medium">You're on the list!</p>
-              <p className="text-sm text-zinc-400 mt-1">We'll set you up with automatic tracking soon.</p>
+              <p className="text-sm text-zinc-400 mt-1">We'll notify you when we launch.</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
@@ -582,7 +660,7 @@ export default function LandingPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
+                placeholder="you@example.com"
                 className="flex-1 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:border-zinc-700 transition-colors"
                 disabled={status === "loading"}
               />
@@ -591,7 +669,7 @@ export default function LandingPage() {
                 className="bg-white text-black font-medium px-6 py-3 rounded-lg hover:bg-zinc-200 transition-colors disabled:opacity-50 whitespace-nowrap"
                 disabled={status === "loading"}
               >
-                {status === "loading" ? "..." : "Join waitlist"}
+                {status === "loading" ? "..." : "Get early access"}
               </button>
             </form>
           )}
@@ -601,9 +679,8 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-6 border-t border-zinc-800/50">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-sm text-zinc-600">
-          <span>© 2025 Briefix</span>
+          <span>© 2025 CourseOS</span>
           <div className="flex items-center gap-6">
-            <Link href="/app" className="hover:text-zinc-400 transition-colors">Try Slack demo</Link>
             <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-zinc-400 transition-colors">
               Twitter
             </a>
