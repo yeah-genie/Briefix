@@ -9,12 +9,19 @@ import {
   Modal,
   KeyboardAvoidingView,
   Platform,
-  Animated,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
 
-import Colors, { spacing, typography } from '@/constants/Colors';
+import Colors, { spacing, typography, radius, shadows } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { NeonButton } from '@/components/ui/NeonButton';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   PlusIcon,
   ChevronRightIcon,
@@ -27,7 +34,6 @@ import {
   MATH_TOPICS,
   getTopicsByGrade,
   diagnoseGaps,
-  getAllPrerequisites,
   getStrugglesForTopic,
 } from '@/services/curriculum/data';
 import { GRADE_NAMES, GradeLevel, Topic } from '@/services/curriculum/types';
@@ -74,7 +80,7 @@ const MOCK_STUDENTS: Student[] = [
   },
   {
     id: '3',
-    name: '박지훈',
+    name: '박준호',
     subject: '수학',
     grade: 'MIDDLE_1',
     currentTopic: 'LINEAR-EQ-1',
@@ -83,7 +89,6 @@ const MOCK_STUDENTS: Student[] = [
   },
 ];
 
-// Grade options for picker
 const GRADE_OPTIONS: GradeLevel[] = [
   'ELEMENTARY_5', 'ELEMENTARY_6',
   'MIDDLE_1', 'MIDDLE_2', 'MIDDLE_3',
@@ -96,7 +101,7 @@ export default function StudentsScreen() {
 
   const [students, setStudents] = useState(MOCK_STUDENTS);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
   // New student form
@@ -107,7 +112,6 @@ export default function StudentsScreen() {
     grade: 'MIDDLE_1' as GradeLevel,
     phone: '',
     targetTopic: '',
-    currentLevel: 'LOW' as 'HIGH' | 'MID' | 'LOW',
   });
 
   // Diagnosis state
@@ -120,7 +124,6 @@ export default function StudentsScreen() {
   const handleStartDiagnosis = () => {
     if (!newStudent.targetTopic) return;
 
-    // Run diagnosis
     const gaps = diagnoseGaps(newStudent.targetTopic, []);
     const targetTopic = MATH_TOPICS.find(t => t.code === newStudent.targetTopic);
     const struggles = getStrugglesForTopic(newStudent.targetTopic);
@@ -131,7 +134,7 @@ export default function StudentsScreen() {
     setDiagnosisResult({
       gaps,
       struggles: struggles.map(s => s.description),
-      estimatedWeeks: Math.ceil(totalHours / 4), // 주 4시간 기준
+      estimatedWeeks: Math.ceil(totalHours / 4),
     });
 
     setStep(3);
@@ -166,7 +169,6 @@ export default function StudentsScreen() {
       grade: 'MIDDLE_1',
       phone: '',
       targetTopic: '',
-      currentLevel: 'LOW',
     });
     setDiagnosisResult(null);
   };
@@ -175,10 +177,13 @@ export default function StudentsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Glow */}
+      {/* Background glow */}
       <View style={styles.glowContainer}>
         <LinearGradient
-          colors={['rgba(6, 182, 212, 0.12)', 'transparent']}
+          colors={[
+            colorScheme === 'dark' ? 'rgba(0, 245, 212, 0.06)' : 'rgba(0, 245, 212, 0.04)',
+            'transparent',
+          ]}
           style={styles.glow}
         />
       </View>
@@ -188,12 +193,25 @@ export default function StudentsScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>학생 관리</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-            총 {students.length}명의 학생
-          </Text>
-        </View>
+        <Animated.View 
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.header}
+        >
+          <View style={styles.headerRow}>
+            <View>
+              <Text style={[styles.title, { color: colors.text }]}>학생 관리</Text>
+              <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                총 {students.length}명의 학생
+              </Text>
+            </View>
+            <View style={styles.statBadge}>
+              <Text style={[styles.statNumber, { color: colors.tint }]}>
+                {students.reduce((sum, s) => sum + s.lessonsCount, 0)}
+              </Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>총 수업</Text>
+            </View>
+          </View>
+        </Animated.View>
 
         {/* Student List */}
         <View style={styles.section}>
@@ -201,71 +219,91 @@ export default function StudentsScreen() {
             내 학생
           </Text>
 
-          {students.map(student => (
-            <TouchableOpacity
+          {students.map((student, idx) => (
+            <Animated.View
               key={student.id}
-              style={[styles.studentCard, { backgroundColor: colors.backgroundTertiary }]}
-              activeOpacity={0.7}
-              onPress={() => {
-                setSelectedStudent(student);
-                setShowDiagnosisModal(true);
-              }}
+              entering={FadeInDown.delay(150 + idx * 50).springify()}
             >
-              <LinearGradient
-                colors={[colors.gradientStart, colors.gradientEnd]}
-                style={styles.avatar}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.studentCard,
+                  { 
+                    backgroundColor: colors.backgroundTertiary,
+                    borderColor: colors.border,
+                    transform: [{ scale: pressed ? 0.98 : 1 }],
+                  },
+                ]}
+                onPress={() => {
+                  setSelectedStudent(student);
+                  setShowDetailModal(true);
+                }}
               >
-                <Text style={styles.avatarText}>{student.initial}</Text>
-              </LinearGradient>
+                <Avatar 
+                  name={student.name} 
+                  size="lg"
+                  variant="gradient"
+                  color={idx % 3 === 0 ? 'orange' : idx % 3 === 1 ? 'mint' : 'purple'}
+                />
 
-              <View style={styles.studentInfo}>
-                <Text style={[styles.studentName, { color: colors.text }]}>
-                  {student.name}
-                </Text>
-                <Text style={[styles.studentMeta, { color: colors.textMuted }]}>
-                  {GRADE_NAMES[student.grade]} · {student.subject}
-                </Text>
+                <View style={styles.studentInfo}>
+                  <Text style={[styles.studentName, { color: colors.text }]}>
+                    {student.name}
+                  </Text>
+                  <Text style={[styles.studentMeta, { color: colors.textMuted }]}>
+                    {GRADE_NAMES[student.grade]} · {student.subject}
+                  </Text>
 
-                <View style={styles.badges}>
-                  <View style={styles.lessonBadge}>
-                    <CheckCircleIcon size={12} color={colors.tint} />
-                    <Text style={[styles.badgeText, { color: colors.tint }]}>
-                      {student.lessonsCount}회
-                    </Text>
-                  </View>
-
-                  {student.diagnosis && student.diagnosis.gaps.length > 0 && (
-                    <View style={[styles.gapBadge, { backgroundColor: 'rgba(251, 191, 36, 0.15)' }]}>
-                      <AlertCircleIcon size={12} color="#FBBF24" />
-                      <Text style={[styles.badgeText, { color: '#FBBF24' }]}>
-                        결손 {student.diagnosis.gaps.length}개
+                  <View style={styles.badges}>
+                    <View style={[styles.lessonBadge, { backgroundColor: colors.tint + '15' }]}>
+                      <CheckCircleIcon size={12} color={colors.tint} />
+                      <Text style={[styles.badgeText, { color: colors.tint }]}>
+                        {student.lessonsCount}회
                       </Text>
                     </View>
-                  )}
-                </View>
-              </View>
 
-              <ChevronRightIcon size={20} color={colors.textMuted} />
-            </TouchableOpacity>
+                    {student.diagnosis && student.diagnosis.gaps.length > 0 && (
+                      <View style={[styles.gapBadge, { backgroundColor: colors.warning + '15' }]}>
+                        <AlertCircleIcon size={12} color={colors.warning} />
+                        <Text style={[styles.badgeText, { color: colors.warning }]}>
+                          결손 {student.diagnosis.gaps.length}개
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+
+                <ChevronRightIcon size={20} color={colors.textMuted} />
+              </Pressable>
+            </Animated.View>
           ))}
         </View>
+
+        {/* Bottom padding */}
+        <View style={{ height: 140 }} />
       </ScrollView>
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={() => setShowAddModal(true)}>
-        <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
-          style={styles.fabGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+      <Animated.View 
+        entering={FadeInUp.delay(400).springify()}
+        style={styles.fabContainer}
+      >
+        <TouchableOpacity 
+          style={styles.fab} 
+          onPress={() => setShowAddModal(true)}
+          activeOpacity={0.8}
         >
-          <PlusIcon size={24} color="#fff" />
-        </LinearGradient>
-      </TouchableOpacity>
+          <LinearGradient
+            colors={[colors.gradientStart, colors.gradientEnd]}
+            style={styles.fabGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <PlusIcon size={26} color="#fff" />
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
 
-      {/* Add Student Modal with Diagnosis */}
+      {/* Add Student Modal */}
       <Modal
         visible={showAddModal}
         animationType="slide"
@@ -276,15 +314,15 @@ export default function StudentsScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalOverlay}
         >
-          <View style={[styles.modalContent, { backgroundColor: colors.backgroundSecondary }]}>
-            {/* Header */}
+          <View style={[styles.modalContent, { backgroundColor: colors.backgroundElevated }]}>
+            {/* Modal Header */}
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {step === 1 && '새 학생 추가'}
                 {step === 2 && '학습 목표 설정'}
-                {step === 3 && '📊 AI 진단 결과'}
+                {step === 3 && '🎯 AI 진단 결과'}
               </Text>
-              <TouchableOpacity onPress={resetModal}>
+              <TouchableOpacity onPress={resetModal} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                 <XIcon size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
@@ -296,7 +334,10 @@ export default function StudentsScreen() {
                   key={s}
                   style={[
                     styles.stepDot,
-                    { backgroundColor: s <= step ? colors.tint : colors.border },
+                    { 
+                      backgroundColor: s <= step ? colors.tint : colors.border,
+                      width: s === step ? 24 : 8,
+                    },
                   ]}
                 />
               ))}
@@ -305,11 +346,15 @@ export default function StudentsScreen() {
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Step 1: Basic Info */}
               {step === 1 && (
-                <>
+                <Animated.View entering={FadeInDown.springify()}>
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.textMuted }]}>이름</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.backgroundTertiary, color: colors.text }]}
+                      style={[styles.input, { 
+                        backgroundColor: colors.backgroundTertiary, 
+                        color: colors.text,
+                        borderColor: newStudent.name ? colors.tint : colors.border,
+                      }]}
                       placeholder="학생 이름"
                       placeholderTextColor={colors.textMuted}
                       value={newStudent.name}
@@ -321,7 +366,7 @@ export default function StudentsScreen() {
                     <Text style={[styles.inputLabel, { color: colors.textMuted }]}>학년</Text>
                     <View style={styles.gradeGrid}>
                       {GRADE_OPTIONS.map(grade => (
-                        <TouchableOpacity
+                        <Pressable
                           key={grade}
                           style={[
                             styles.gradeChip,
@@ -329,6 +374,9 @@ export default function StudentsScreen() {
                               backgroundColor: newStudent.grade === grade
                                 ? colors.tint
                                 : colors.backgroundTertiary,
+                              borderColor: newStudent.grade === grade
+                                ? colors.tint
+                                : colors.border,
                             },
                           ]}
                           onPress={() => setNewStudent(prev => ({ ...prev, grade }))}
@@ -341,7 +389,7 @@ export default function StudentsScreen() {
                           >
                             {GRADE_NAMES[grade]}
                           </Text>
-                        </TouchableOpacity>
+                        </Pressable>
                       ))}
                     </View>
                   </View>
@@ -349,7 +397,11 @@ export default function StudentsScreen() {
                   <View style={styles.inputGroup}>
                     <Text style={[styles.inputLabel, { color: colors.textMuted }]}>학부모 연락처</Text>
                     <TextInput
-                      style={[styles.input, { backgroundColor: colors.backgroundTertiary, color: colors.text }]}
+                      style={[styles.input, { 
+                        backgroundColor: colors.backgroundTertiary, 
+                        color: colors.text,
+                        borderColor: colors.border,
+                      }]}
                       placeholder="010-1234-5678"
                       placeholderTextColor={colors.textMuted}
                       value={newStudent.phone}
@@ -358,25 +410,23 @@ export default function StudentsScreen() {
                     />
                   </View>
 
-                  <TouchableOpacity
-                    style={[styles.nextButton, { opacity: newStudent.name ? 1 : 0.5 }]}
+                  <NeonButton
+                    title="다음: 학습 목표 설정"
+                    variant="gradient"
+                    glowColor="orange"
+                    icon={<ChevronRightIcon size={18} color="#fff" />}
+                    iconPosition="right"
                     onPress={() => setStep(2)}
                     disabled={!newStudent.name}
-                  >
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientEnd]}
-                      style={styles.nextButtonGradient}
-                    >
-                      <Text style={styles.nextButtonText}>다음: 학습 목표 설정</Text>
-                      <ChevronRightIcon size={18} color="#fff" />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </>
+                    fullWidth
+                    style={{ marginTop: spacing.lg }}
+                  />
+                </Animated.View>
               )}
 
               {/* Step 2: Target Topic Selection */}
               {step === 2 && (
-                <>
+                <Animated.View entering={FadeInDown.springify()}>
                   <Text style={[styles.stepDescription, { color: colors.textSecondary }]}>
                     {GRADE_NAMES[newStudent.grade]} 과정에서 목표 단원을 선택하세요.
                     {'\n'}AI가 필요한 선수학습을 자동으로 진단합니다.
@@ -384,79 +434,75 @@ export default function StudentsScreen() {
 
                   <View style={styles.topicList}>
                     {gradeTopics.map(topic => (
-                      <TouchableOpacity
+                      <Pressable
                         key={topic.code}
                         style={[
                           styles.topicCard,
                           {
                             backgroundColor: newStudent.targetTopic === topic.code
-                              ? 'rgba(16, 185, 129, 0.15)'
+                              ? colors.tint + '15'
                               : colors.backgroundTertiary,
                             borderColor: newStudent.targetTopic === topic.code
                               ? colors.tint
-                              : 'transparent',
-                            borderWidth: 1,
+                              : colors.border,
                           },
                         ]}
                         onPress={() => setNewStudent(prev => ({ ...prev, targetTopic: topic.code }))}
                       >
-                        <Text style={[styles.topicName, { color: colors.text }]}>
-                          {topic.name}
-                        </Text>
+                        <View style={styles.topicHeader}>
+                          <Text style={[styles.topicName, { color: colors.text }]}>
+                            {topic.name}
+                          </Text>
+                          {newStudent.targetTopic === topic.code && (
+                            <CheckCircleIcon size={18} color={colors.tint} />
+                          )}
+                        </View>
                         <View style={styles.topicMeta}>
                           <Text style={[styles.topicHours, { color: colors.textMuted }]}>
                             약 {topic.estimatedHours}시간
                           </Text>
                           <View style={[styles.difficultyBadge, {
                             backgroundColor: topic.difficulty >= 4
-                              ? 'rgba(239, 68, 68, 0.15)'
+                              ? colors.error + '15'
                               : topic.difficulty >= 3
-                                ? 'rgba(251, 191, 36, 0.15)'
-                                : 'rgba(34, 197, 94, 0.15)',
+                                ? colors.warning + '15'
+                                : colors.success + '15',
                           }]}>
                             <Text style={{
-                              fontSize: 11,
+                              fontSize: 10,
                               color: topic.difficulty >= 4
-                                ? '#EF4444'
+                                ? colors.error
                                 : topic.difficulty >= 3
-                                  ? '#FBBF24'
-                                  : '#22C55E',
+                                  ? colors.warning
+                                  : colors.success,
                             }}>
                               {'★'.repeat(topic.difficulty)}
                             </Text>
                           </View>
                         </View>
-                        {topic.prerequisites.length > 0 && (
-                          <Text style={[styles.prereqText, { color: colors.textMuted }]}>
-                            선수: {topic.prerequisites.length}개 단원
-                          </Text>
-                        )}
-                      </TouchableOpacity>
+                      </Pressable>
                     ))}
                   </View>
 
-                  <TouchableOpacity
-                    style={[styles.diagnoseButton, { opacity: newStudent.targetTopic ? 1 : 0.5 }]}
+                  <NeonButton
+                    title="AI 진단 시작"
+                    variant="gradient"
+                    glowColor="purple"
+                    icon={<SparklesIcon size={18} color="#fff" />}
                     onPress={handleStartDiagnosis}
                     disabled={!newStudent.targetTopic}
-                  >
-                    <LinearGradient
-                      colors={['#8B5CF6', '#6366F1']}
-                      style={styles.diagnoseButtonGradient}
-                    >
-                      <SparklesIcon size={18} color="#fff" />
-                      <Text style={styles.diagnoseButtonText}>AI 진단 시작</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </>
+                    fullWidth
+                    style={{ marginTop: spacing.lg }}
+                  />
+                </Animated.View>
               )}
 
               {/* Step 3: Diagnosis Result */}
               {step === 3 && diagnosisResult && (
-                <>
-                  <View style={[styles.resultCard, { backgroundColor: 'rgba(16, 185, 129, 0.08)' }]}>
-                    <Text style={[styles.resultTitle, { color: colors.tint }]}>
-                      📋 {newStudent.name} 학생 진단 완료
+                <Animated.View entering={FadeInDown.springify()}>
+                  <GlowCard variant="neon" glowColor="mint" style={styles.resultCard}>
+                    <Text style={[styles.resultTitle, { color: colors.tintSecondary }]}>
+                      🎯 {newStudent.name} 학생 진단 완료
                     </Text>
 
                     <View style={styles.resultStats}>
@@ -464,7 +510,7 @@ export default function StudentsScreen() {
                         <Text style={[styles.statValue, { color: colors.text }]}>
                           {diagnosisResult.gaps.length}개
                         </Text>
-                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        <Text style={[styles.statLabelSmall, { color: colors.textMuted }]}>
                           보충 필요
                         </Text>
                       </View>
@@ -473,20 +519,20 @@ export default function StudentsScreen() {
                         <Text style={[styles.statValue, { color: colors.text }]}>
                           약 {diagnosisResult.estimatedWeeks}주
                         </Text>
-                        <Text style={[styles.statLabel, { color: colors.textMuted }]}>
+                        <Text style={[styles.statLabelSmall, { color: colors.textMuted }]}>
                           예상 기간
                         </Text>
                       </View>
                     </View>
-                  </View>
+                  </GlowCard>
 
                   {diagnosisResult.gaps.length > 0 && (
                     <View style={styles.gapsSection}>
                       <Text style={[styles.gapsSectionTitle, { color: colors.text }]}>
-                        🔍 발견된 결손 단원
+                        📚 발견된 결손 단원
                       </Text>
 
-                      {diagnosisResult.gaps.map((gap, idx) => (
+                      {diagnosisResult.gaps.map((gap) => (
                         <View
                           key={gap.topic.code}
                           style={[styles.gapItem, { backgroundColor: colors.backgroundTertiary }]}
@@ -495,10 +541,10 @@ export default function StudentsScreen() {
                             styles.severityDot,
                             {
                               backgroundColor: gap.severity === 'CRITICAL'
-                                ? '#EF4444'
+                                ? colors.error
                                 : gap.severity === 'MODERATE'
-                                  ? '#FBBF24'
-                                  : '#22C55E',
+                                  ? colors.warning
+                                  : colors.success,
                             },
                           ]} />
                           <View style={styles.gapInfo}>
@@ -511,10 +557,10 @@ export default function StudentsScreen() {
                           </View>
                           <Text style={[styles.gapSeverity, {
                             color: gap.severity === 'CRITICAL'
-                              ? '#EF4444'
+                              ? colors.error
                               : gap.severity === 'MODERATE'
-                                ? '#FBBF24'
-                                : '#22C55E',
+                                ? colors.warning
+                                : colors.success,
                           }]}>
                             {gap.severity === 'CRITICAL' ? '필수' : gap.severity === 'MODERATE' ? '권장' : '참고'}
                           </Text>
@@ -526,7 +572,7 @@ export default function StudentsScreen() {
                   {diagnosisResult.struggles.length > 0 && (
                     <View style={styles.tipsSection}>
                       <Text style={[styles.tipsSectionTitle, { color: colors.text }]}>
-                        ⚠️ 자주 발생하는 어려움
+                        💡 자주 발생하는 어려움
                       </Text>
                       {diagnosisResult.struggles.slice(0, 2).map((struggle, idx) => (
                         <Text
@@ -539,16 +585,16 @@ export default function StudentsScreen() {
                     </View>
                   )}
 
-                  <TouchableOpacity style={styles.saveButton} onPress={handleSaveStudent}>
-                    <LinearGradient
-                      colors={[colors.gradientStart, colors.gradientEnd]}
-                      style={styles.saveButtonGradient}
-                    >
-                      <CheckCircleIcon size={18} color="#fff" />
-                      <Text style={styles.saveButtonText}>학생 등록 완료</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </>
+                  <NeonButton
+                    title="학생 등록 완료"
+                    variant="gradient"
+                    glowColor="mint"
+                    icon={<CheckCircleIcon size={18} color="#fff" />}
+                    onPress={handleSaveStudent}
+                    fullWidth
+                    style={{ marginTop: spacing.lg }}
+                  />
+                </Animated.View>
               )}
             </ScrollView>
           </View>
@@ -557,51 +603,70 @@ export default function StudentsScreen() {
 
       {/* Student Detail Modal */}
       <Modal
-        visible={showDiagnosisModal}
+        visible={showDetailModal}
         animationType="slide"
         transparent
-        onRequestClose={() => setShowDiagnosisModal(false)}
+        onRequestClose={() => setShowDetailModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.backgroundSecondary }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.backgroundElevated }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
                 {selectedStudent?.name} 학생
               </Text>
-              <TouchableOpacity onPress={() => setShowDiagnosisModal(false)}>
+              <TouchableOpacity onPress={() => setShowDetailModal(false)}>
                 <XIcon size={24} color={colors.textMuted} />
               </TouchableOpacity>
             </View>
 
             {selectedStudent && (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[styles.detailCard, { backgroundColor: colors.backgroundTertiary }]}>
-                  <Text style={[styles.detailLabel, { color: colors.textMuted }]}>학년/과목</Text>
-                  <Text style={[styles.detailValue, { color: colors.text }]}>
+                <View style={styles.detailProfile}>
+                  <Avatar name={selectedStudent.name} size="xl" variant="gradient" />
+                  <Text style={[styles.detailName, { color: colors.text }]}>
+                    {selectedStudent.name}
+                  </Text>
+                  <Text style={[styles.detailMeta, { color: colors.textMuted }]}>
                     {GRADE_NAMES[selectedStudent.grade]} · {selectedStudent.subject}
                   </Text>
                 </View>
 
-                {selectedStudent.currentTopic && (
-                  <View style={[styles.detailCard, { backgroundColor: colors.backgroundTertiary }]}>
-                    <Text style={[styles.detailLabel, { color: colors.textMuted }]}>현재 학습 단원</Text>
-                    <Text style={[styles.detailValue, { color: colors.text }]}>
-                      {MATH_TOPICS.find(t => t.code === selectedStudent.currentTopic)?.name || selectedStudent.currentTopic}
+                <View style={styles.detailStatsRow}>
+                  <GlowCard variant="glass" style={styles.detailStatCard}>
+                    <Text style={[styles.detailStatValue, { color: colors.tint }]}>
+                      {selectedStudent.lessonsCount}
                     </Text>
+                    <Text style={[styles.detailStatLabel, { color: colors.textMuted }]}>
+                      완료 수업
+                    </Text>
+                  </GlowCard>
+                  <GlowCard variant="glass" style={styles.detailStatCard}>
+                    <Text style={[styles.detailStatValue, { color: colors.tintSecondary }]}>
+                      {selectedStudent.diagnosis?.estimatedWeeks || 0}주
+                    </Text>
+                    <Text style={[styles.detailStatLabel, { color: colors.textMuted }]}>
+                      예상 기간
+                    </Text>
+                  </GlowCard>
+                </View>
+
+                {selectedStudent.currentTopic && (
+                  <View style={styles.currentTopicSection}>
+                    <Text style={[styles.sectionLabelSmall, { color: colors.textMuted }]}>
+                      현재 학습 단원
+                    </Text>
+                    <GlowCard variant="neon" glowColor="orange">
+                      <Text style={[styles.currentTopicName, { color: colors.text }]}>
+                        {MATH_TOPICS.find(t => t.code === selectedStudent.currentTopic)?.name || selectedStudent.currentTopic}
+                      </Text>
+                    </GlowCard>
                   </View>
                 )}
 
-                <View style={[styles.detailCard, { backgroundColor: colors.backgroundTertiary }]}>
-                  <Text style={[styles.detailLabel, { color: colors.textMuted }]}>완료한 수업</Text>
-                  <Text style={[styles.detailValue, { color: colors.tint }]}>
-                    {selectedStudent.lessonsCount}회
-                  </Text>
-                </View>
-
                 {selectedStudent.diagnosis && selectedStudent.diagnosis.gaps.length > 0 && (
                   <View style={styles.gapsSection}>
-                    <Text style={[styles.gapsSectionTitle, { color: colors.text }]}>
-                      📊 진단된 결손
+                    <Text style={[styles.sectionLabelSmall, { color: colors.textMuted }]}>
+                      진단된 결손
                     </Text>
                     {selectedStudent.diagnosis.gaps.map(gap => (
                       <View
@@ -609,7 +674,7 @@ export default function StudentsScreen() {
                         style={[styles.gapItem, { backgroundColor: colors.backgroundTertiary }]}
                       >
                         <View style={[styles.severityDot, {
-                          backgroundColor: gap.severity === 'CRITICAL' ? '#EF4444' : '#FBBF24',
+                          backgroundColor: gap.severity === 'CRITICAL' ? colors.error : colors.warning,
                         }]} />
                         <View style={styles.gapInfo}>
                           <Text style={[styles.gapName, { color: colors.text }]}>
@@ -637,92 +702,110 @@ const styles = StyleSheet.create({
   glowContainer: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
-    height: 200,
+    height: 300,
     overflow: 'hidden',
   },
   glow: {
     position: 'absolute',
-    top: -100,
+    top: -150,
     left: '50%',
-    marginLeft: -200,
-    width: 400,
-    height: 300,
-    borderRadius: 200,
+    marginLeft: -250,
+    width: 500,
+    height: 400,
+    borderRadius: 250,
   },
   content: {
     padding: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: 120,
+    paddingTop: 60,
   },
-  header: { marginBottom: spacing.xl },
+  header: { marginBottom: spacing.xxl },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   title: { ...typography.h1 },
-  subtitle: { ...typography.bodySmall, marginTop: spacing.xs },
-  section: { marginBottom: spacing.xl },
+  subtitle: { ...typography.body, marginTop: spacing.xs },
+  statBadge: {
+    alignItems: 'center',
+    padding: spacing.md,
+  },
+  statNumber: {
+    ...typography.display,
+    fontSize: 36,
+  },
+  statLabel: {
+    ...typography.caption,
+    marginTop: 2,
+  },
+  section: { marginBottom: spacing.xxl },
   sectionLabel: {
     ...typography.caption,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     marginBottom: spacing.md,
+  },
+  sectionLabelSmall: {
+    ...typography.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.sm,
   },
   studentCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1,
   },
-  avatar: {
-    width: 48, height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: { color: '#fff', fontSize: 18, fontWeight: '600' },
-  studentInfo: { flex: 1, marginLeft: spacing.md },
-  studentName: { ...typography.body, fontWeight: '600' },
-  studentMeta: { ...typography.caption, marginTop: 2 },
-  badges: { flexDirection: 'row', gap: spacing.sm, marginTop: 6 },
+  studentInfo: { flex: 1, marginLeft: spacing.lg },
+  studentName: { ...typography.h3 },
+  studentMeta: { ...typography.bodySmall, marginTop: 2 },
+  badges: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   lessonBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
   gapBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
   },
-  badgeText: { ...typography.caption, fontWeight: '500' },
-  fab: {
+  badgeText: { ...typography.caption },
+  fabContainer: {
     position: 'absolute',
     bottom: 100,
     right: spacing.lg,
-    borderRadius: 28,
+  },
+  fab: {
+    borderRadius: radius.full,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...shadows.lg,
   },
   fabGradient: {
-    width: 56, height: 56,
+    width: 60,
+    height: 60,
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
     padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxxl,
     maxHeight: '90%',
   },
   modalHeader: {
@@ -736,23 +819,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
   },
   stepDot: {
-    width: 8, height: 8,
-    borderRadius: 4,
+    height: 8,
+    borderRadius: radius.full,
   },
   stepDescription: {
     ...typography.body,
     marginBottom: spacing.lg,
-    lineHeight: 22,
+    lineHeight: 24,
   },
-  inputGroup: { marginBottom: spacing.md },
-  inputLabel: { ...typography.caption, marginBottom: spacing.xs },
+  inputGroup: { marginBottom: spacing.lg },
+  inputLabel: { ...typography.label, marginBottom: spacing.sm },
   input: {
-    padding: spacing.md,
-    borderRadius: 12,
-    fontSize: 15,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    fontSize: 16,
+    borderWidth: 1.5,
   },
   gradeGrid: {
     flexDirection: 'row',
@@ -762,108 +846,78 @@ const styles = StyleSheet.create({
   gradeChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 20,
+    borderRadius: radius.full,
+    borderWidth: 1,
   },
-  gradeChipText: { ...typography.bodySmall, fontWeight: '500' },
-  topicList: { gap: spacing.sm, marginBottom: spacing.lg },
+  gradeChipText: { ...typography.bodySmall, fontWeight: '600' },
+  topicList: { gap: spacing.sm },
   topicCard: {
-    padding: spacing.md,
-    borderRadius: 12,
+    padding: spacing.lg,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
   },
-  topicName: { ...typography.body, fontWeight: '600' },
+  topicHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  topicName: { ...typography.bodyMedium },
   topicMeta: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   topicHours: { ...typography.caption },
   difficultyBadge: {
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
-  },
-  prereqText: { ...typography.caption, marginTop: 4 },
-  nextButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: spacing.md,
-  },
-  nextButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  nextButtonText: {
-    color: '#fff',
-    ...typography.body,
-    fontWeight: '600',
-  },
-  diagnoseButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginTop: spacing.md,
-  },
-  diagnoseButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  diagnoseButtonText: {
-    color: '#fff',
-    ...typography.body,
-    fontWeight: '600',
+    borderRadius: radius.xs,
   },
   resultCard: {
-    padding: spacing.lg,
-    borderRadius: 16,
     marginBottom: spacing.lg,
   },
   resultTitle: {
     ...typography.h3,
     marginBottom: spacing.md,
+    textAlign: 'center',
   },
   resultStats: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: spacing.xl,
+    gap: spacing.xxl,
   },
   statItem: { alignItems: 'center' },
   statValue: { ...typography.h2 },
-  statLabel: { ...typography.caption, marginTop: 4 },
+  statLabelSmall: { ...typography.caption, marginTop: 4 },
   statDivider: { width: 1, height: 40 },
   gapsSection: { marginBottom: spacing.lg },
   gapsSectionTitle: {
-    ...typography.body,
-    fontWeight: '600',
+    ...typography.bodyMedium,
     marginBottom: spacing.md,
   },
   gapItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.md,
-    borderRadius: 12,
+    borderRadius: radius.md,
     marginBottom: spacing.sm,
   },
   severityDot: {
-    width: 8, height: 8,
-    borderRadius: 4,
+    width: 10,
+    height: 10,
+    borderRadius: radius.full,
   },
   gapInfo: { flex: 1, marginLeft: spacing.md },
-  gapName: { ...typography.body, fontWeight: '500' },
+  gapName: { ...typography.body },
   gapMeta: { ...typography.caption, marginTop: 2 },
   gapSeverity: {
     ...typography.caption,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   tipsSection: { marginBottom: spacing.lg },
   tipsSectionTitle: {
-    ...typography.body,
-    fontWeight: '600',
+    ...typography.bodyMedium,
     marginBottom: spacing.sm,
   },
   tipText: {
@@ -871,33 +925,39 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     lineHeight: 20,
   },
-  saveButton: {
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  saveButtonGradient: {
-    flexDirection: 'row',
+  detailProfile: {
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    gap: spacing.sm,
+    marginBottom: spacing.xl,
   },
-  saveButtonText: {
-    color: '#fff',
+  detailName: {
+    ...typography.h2,
+    marginTop: spacing.md,
+  },
+  detailMeta: {
     ...typography.body,
-    fontWeight: '600',
+    marginTop: spacing.xs,
   },
-  detailCard: {
-    padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
+  detailStatsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
   },
-  detailLabel: {
+  detailStatCard: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  detailStatValue: {
+    ...typography.h1,
+  },
+  detailStatLabel: {
     ...typography.caption,
-    marginBottom: 4,
+    marginTop: spacing.xs,
   },
-  detailValue: {
-    ...typography.body,
-    fontWeight: '600',
+  currentTopicSection: {
+    marginBottom: spacing.xl,
+  },
+  currentTopicName: {
+    ...typography.bodyMedium,
+    textAlign: 'center',
   },
 });

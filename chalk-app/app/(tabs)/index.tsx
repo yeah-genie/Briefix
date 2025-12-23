@@ -4,16 +4,21 @@ import {
   View,
   Text,
   ScrollView,
-  TouchableOpacity,
   TextInput,
-  ActivityIndicator,
-  Animated,
+  Pressable,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
+import Animated, {
+  FadeInDown,
+  FadeInUp,
+} from 'react-native-reanimated';
 
-import Colors, { spacing, typography } from '@/constants/Colors';
+import Colors, { spacing, typography, radius } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { GlowCard } from '@/components/ui/GlowCard';
+import { NeonButton } from '@/components/ui/NeonButton';
+import { Avatar } from '@/components/ui/Avatar';
 import {
   LevelHighIcon,
   LevelMidIcon,
@@ -28,11 +33,11 @@ import {
 const MOCK_STUDENTS = [
   { id: '1', name: '김민수', subject: '수학', grade: '중2', initial: 'M' },
   { id: '2', name: '이서연', subject: '영어', grade: '고1', initial: 'S' },
-  { id: '3', name: '박지훈', subject: '수학', grade: '중1', initial: 'J' },
+  { id: '3', name: '박준호', subject: '수학', grade: '중1', initial: 'J' },
 ];
 
 const MOCK_OUTCOMES = [
-  { id: '1', title: '이차방정식 풀이' },
+  { id: '1', title: '일차방정식 풀이' },
   { id: '2', title: '인수분해' },
   { id: '3', title: '함수의 개념' },
 ];
@@ -45,7 +50,7 @@ interface OutcomeCheck {
 }
 
 export default function TodayScreen() {
-  const colorScheme = useColorScheme() ?? 'dark'; // 기본 다크모드
+  const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
 
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
@@ -79,7 +84,7 @@ export default function TodayScreen() {
       setPolishedFeedback(
         `안녕하세요, ${student?.name} 학부모님.\n\n` +
         `오늘 수업에서 ${feedback}\n\n` +
-        `궁금하신 점이 있으시면 편하게 말씀해 주세요. 감사합니다.`
+        `궁금하신 점이 있으시면 편하게 말씀해 주세요. 감사합니다!`
       );
       setIsPolishing(false);
     }, 1500);
@@ -98,15 +103,25 @@ export default function TodayScreen() {
     setStep(1);
   };
 
-  const selectedStudentData = MOCK_STUDENTS.find(s => s.id === selectedStudent);
+  const allOutcomesChecked = outcomeChecks.every(c => c.level !== null);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header gradient glow */}
+      {/* Background gradient glow */}
       <View style={styles.glowContainer}>
         <LinearGradient
-          colors={['rgba(16, 185, 129, 0.15)', 'transparent']}
-          style={styles.glow}
+          colors={[
+            colorScheme === 'dark' ? 'rgba(255, 107, 53, 0.08)' : 'rgba(255, 107, 53, 0.05)',
+            'transparent',
+          ]}
+          style={styles.glowTop}
+        />
+        <LinearGradient
+          colors={[
+            'transparent',
+            colorScheme === 'dark' ? 'rgba(0, 245, 212, 0.05)' : 'rgba(0, 245, 212, 0.03)',
+          ]}
+          style={styles.glowBottom}
         />
       </View>
 
@@ -116,74 +131,89 @@ export default function TodayScreen() {
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View 
+          entering={FadeInDown.delay(100).springify()}
+          style={styles.header}
+        >
+          <Text style={[styles.greeting, { color: colors.textMuted }]}>
+            {getGreeting()}
+          </Text>
           <Text style={[styles.title, { color: colors.text }]}>오늘의 수업</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          <Text style={[styles.date, { color: colors.textSecondary }]}>
             {new Date().toLocaleDateString('ko-KR', {
               month: 'long',
               day: 'numeric',
               weekday: 'long'
             })}
           </Text>
-        </View>
+        </Animated.View>
 
         {/* Step 1: Student Selection */}
-        <View style={styles.section}>
+        <Animated.View 
+          entering={FadeInDown.delay(200).springify()}
+          style={styles.section}
+        >
           <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
             학생 선택
           </Text>
 
-          {MOCK_STUDENTS.map(student => (
-            <TouchableOpacity
-              key={student.id}
-              style={[
-                styles.studentCard,
-                {
-                  backgroundColor: colors.backgroundTertiary,
-                  borderColor: selectedStudent === student.id
-                    ? colors.tint
-                    : colors.border,
-                  borderWidth: selectedStudent === student.id ? 1.5 : 1,
-                },
-              ]}
-              onPress={() => setSelectedStudent(student.id)}
-              activeOpacity={0.7}
-            >
-              <LinearGradient
-                colors={
-                  selectedStudent === student.id
-                    ? [colors.gradientStart, colors.gradientEnd]
-                    : [colors.backgroundSecondary, colors.backgroundSecondary]
-                }
-                style={styles.avatar}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
+          <View style={styles.studentGrid}>
+            {MOCK_STUDENTS.map((student, idx) => (
+              <Animated.View
+                key={student.id}
+                entering={FadeInDown.delay(250 + idx * 50).springify()}
               >
-                <Text style={styles.avatarText}>{student.initial}</Text>
-              </LinearGradient>
-
-              <View style={styles.studentInfo}>
-                <Text style={[styles.studentName, { color: colors.text }]}>
-                  {student.name}
-                </Text>
-                <Text style={[styles.studentMeta, { color: colors.textMuted }]}>
-                  {student.grade} · {student.subject}
-                </Text>
-              </View>
-
-              <ChevronRightIcon size={20} color={colors.textMuted} />
-            </TouchableOpacity>
-          ))}
-        </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.studentCard,
+                    {
+                      backgroundColor: selectedStudent === student.id
+                        ? colors.tint + '15'
+                        : colors.backgroundTertiary,
+                      borderColor: selectedStudent === student.id
+                        ? colors.tint
+                        : colors.border,
+                      transform: [{ scale: pressed ? 0.98 : 1 }],
+                    },
+                  ]}
+                  onPress={() => setSelectedStudent(student.id)}
+                >
+                  <Avatar 
+                    name={student.name} 
+                    size="md"
+                    variant={selectedStudent === student.id ? 'gradient' : 'ring'}
+                    color="orange"
+                  />
+                  <Text 
+                    style={[
+                      styles.studentName, 
+                      { color: colors.text },
+                      selectedStudent === student.id && { color: colors.tint }
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {student.name}
+                  </Text>
+                  <Text style={[styles.studentMeta, { color: colors.textMuted }]}>
+                    {student.grade} · {student.subject}
+                  </Text>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </View>
+        </Animated.View>
 
         {/* Step 2: Outcome Checks */}
         {step >= 2 && selectedStudent && (
-          <View style={styles.section}>
+          <Animated.View 
+            entering={FadeInDown.springify()}
+            style={styles.section}
+          >
             <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
               학습 목표 달성도
             </Text>
 
-            <View style={[styles.outcomeCard, { backgroundColor: colors.backgroundTertiary }]}>
+            <GlowCard variant="glass" style={styles.outcomeCard}>
               {MOCK_OUTCOMES.map((outcome, idx) => {
                 const check = outcomeChecks.find(c => c.outcomeId === outcome.id);
                 return (
@@ -201,68 +231,53 @@ export default function TodayScreen() {
                       {outcome.title}
                     </Text>
                     <View style={styles.levelButtons}>
-                      <TouchableOpacity
-                        style={[
-                          styles.levelBtn,
-                          check?.level === 'high' && styles.levelBtnActive,
-                          check?.level === 'high' && { backgroundColor: 'rgba(52, 211, 153, 0.15)' }
-                        ]}
+                      <LevelButton
+                        level="high"
+                        selected={check?.level === 'high'}
                         onPress={() => handleLevelSelect(outcome.id, 'high')}
-                      >
-                        <LevelHighIcon
-                          size={20}
-                          color={check?.level === 'high' ? colors.levelHigh : colors.textMuted}
-                        />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.levelBtn,
-                          check?.level === 'mid' && styles.levelBtnActive,
-                          check?.level === 'mid' && { backgroundColor: 'rgba(96, 165, 250, 0.15)' }
-                        ]}
+                        colors={colors}
+                      />
+                      <LevelButton
+                        level="mid"
+                        selected={check?.level === 'mid'}
                         onPress={() => handleLevelSelect(outcome.id, 'mid')}
-                      >
-                        <LevelMidIcon
-                          size={20}
-                          color={check?.level === 'mid' ? colors.levelMid : colors.textMuted}
-                        />
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.levelBtn,
-                          check?.level === 'low' && styles.levelBtnActive,
-                          check?.level === 'low' && { backgroundColor: 'rgba(251, 191, 36, 0.15)' }
-                        ]}
+                        colors={colors}
+                      />
+                      <LevelButton
+                        level="low"
+                        selected={check?.level === 'low'}
                         onPress={() => handleLevelSelect(outcome.id, 'low')}
-                      >
-                        <LevelLowIcon
-                          size={20}
-                          color={check?.level === 'low' ? colors.levelLow : colors.textMuted}
-                        />
-                      </TouchableOpacity>
+                        colors={colors}
+                      />
                     </View>
                   </View>
                 );
               })}
-            </View>
+            </GlowCard>
 
-            <TouchableOpacity
-              style={[styles.nextButton, { borderColor: colors.border }]}
-              onPress={() => setStep(3)}
-            >
-              <Text style={[styles.nextButtonText, { color: colors.text }]}>
-                피드백 작성하기
-              </Text>
-              <ChevronRightIcon size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          </View>
+            {allOutcomesChecked && (
+              <Animated.View entering={FadeInUp.springify()}>
+                <NeonButton
+                  title="피드백 작성하기"
+                  variant="outline"
+                  glowColor="mint"
+                  onPress={() => setStep(3)}
+                  icon={<ChevronRightIcon size={18} color={colors.tintSecondary} />}
+                  iconPosition="right"
+                  fullWidth
+                  style={{ marginTop: spacing.md }}
+                />
+              </Animated.View>
+            )}
+          </Animated.View>
         )}
 
         {/* Step 3: Feedback */}
         {step >= 3 && (
-          <View style={styles.section}>
+          <Animated.View 
+            entering={FadeInDown.springify()}
+            style={styles.section}
+          >
             <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
               학부모 피드백
             </Text>
@@ -273,7 +288,7 @@ export default function TodayScreen() {
                 {
                   backgroundColor: colors.backgroundTertiary,
                   color: colors.text,
-                  borderColor: colors.border,
+                  borderColor: feedback ? colors.tint : colors.border,
                 },
               ]}
               placeholder="오늘 수업 내용을 간단히 적어주세요..."
@@ -284,64 +299,116 @@ export default function TodayScreen() {
               onChangeText={setFeedback}
             />
 
-            <TouchableOpacity
-              style={[
-                styles.polishButton,
-                { backgroundColor: colors.backgroundTertiary, borderColor: colors.border },
-              ]}
+            <NeonButton
+              title="AI로 다듬기"
+              variant="secondary"
+              glowColor="purple"
+              icon={<SparklesIcon size={18} color={colors.tintAccent} />}
               onPress={handlePolishFeedback}
-              disabled={isPolishing || !feedback.trim()}
-            >
-              {isPolishing ? (
-                <ActivityIndicator color={colors.tint} size="small" />
-              ) : (
-                <>
-                  <SparklesIcon size={18} color={colors.tint} />
-                  <Text style={[styles.polishButtonText, { color: colors.text }]}>
-                    AI로 다듬기
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+              loading={isPolishing}
+              disabled={!feedback.trim()}
+              fullWidth
+              style={{ marginTop: spacing.md }}
+              textStyle={{ color: colors.tintAccent }}
+            />
 
             {polishedFeedback && (
-              <View
-                style={[
-                  styles.polishedCard,
-                  { backgroundColor: 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.2)' }
-                ]}
-              >
-                <View style={styles.polishedHeader}>
-                  <CheckCircleIcon size={16} color={colors.tint} />
-                  <Text style={[styles.polishedLabel, { color: colors.tint }]}>
-                    AI 수정 완료
+              <Animated.View entering={FadeInUp.springify()}>
+                <GlowCard 
+                  variant="neon" 
+                  glowColor="mint"
+                  style={styles.polishedCard}
+                >
+                  <View style={styles.polishedHeader}>
+                    <CheckCircleIcon size={16} color={colors.tintSecondary} />
+                    <Text style={[styles.polishedLabel, { color: colors.tintSecondary }]}>
+                      AI 수정 완료
+                    </Text>
+                  </View>
+                  <Text style={[styles.polishedText, { color: colors.textSecondary }]}>
+                    {polishedFeedback}
                   </Text>
-                </View>
-                <Text style={[styles.polishedText, { color: colors.textSecondary }]}>
-                  {polishedFeedback}
-                </Text>
-              </View>
+                </GlowCard>
+              </Animated.View>
             )}
 
-            <TouchableOpacity
-              style={styles.sendButton}
+            <NeonButton
+              title="카카오톡 전송"
+              variant="gradient"
+              glowColor="orange"
+              icon={<SendIcon size={18} color="#fff" />}
               onPress={handleSend}
-            >
-              <LinearGradient
-                colors={[colors.gradientStart, colors.gradientEnd]}
-                style={styles.sendButtonGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <SendIcon size={18} color="#fff" />
-                <Text style={styles.sendButtonText}>카카오톡 전송</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
+              disabled={!feedback.trim() && !polishedFeedback}
+              fullWidth
+              style={{ marginTop: spacing.lg }}
+            />
+          </Animated.View>
         )}
+
+        {/* Bottom padding for tab bar */}
+        <View style={{ height: 100 }} />
       </ScrollView>
     </View>
   );
+}
+
+// Level selection button component
+function LevelButton({
+  level,
+  selected,
+  onPress,
+  colors,
+}: {
+  level: 'high' | 'mid' | 'low';
+  selected: boolean;
+  onPress: () => void;
+  colors: any;
+}) {
+  const getLevelColor = () => {
+    switch (level) {
+      case 'high': return colors.levelHigh;
+      case 'mid': return colors.levelMid;
+      case 'low': return colors.levelLow;
+    }
+  };
+
+  const getLevelBgColor = () => {
+    if (!selected) return 'transparent';
+    switch (level) {
+      case 'high': return colors.levelHigh + '20';
+      case 'mid': return colors.levelMid + '20';
+      case 'low': return colors.levelLow + '20';
+    }
+  };
+
+  const Icon = level === 'high' ? LevelHighIcon : level === 'mid' ? LevelMidIcon : LevelLowIcon;
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.levelBtn,
+        {
+          backgroundColor: getLevelBgColor(),
+          borderColor: selected ? getLevelColor() : 'transparent',
+          borderWidth: selected ? 1.5 : 0,
+          transform: [{ scale: pressed ? 0.9 : selected ? 1.05 : 1 }],
+        },
+      ]}
+      onPress={onPress}
+    >
+      <Icon
+        size={20}
+        color={selected ? getLevelColor() : colors.textMuted}
+      />
+    </Pressable>
+  );
+}
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return '좋은 아침이에요';
+  if (hour < 18) return '좋은 오후에요';
+  return '좋은 저녁이에요';
 }
 
 const styles = StyleSheet.create({
@@ -353,89 +420,88 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 200,
+    bottom: 0,
     overflow: 'hidden',
   },
-  glow: {
+  glowTop: {
     position: 'absolute',
     top: -100,
-    left: '50%',
-    marginLeft: -200,
-    width: 400,
-    height: 300,
+    left: -100,
+    right: -100,
+    height: 400,
     borderRadius: 200,
+  },
+  glowBottom: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 300,
   },
   scrollView: {
     flex: 1,
   },
   content: {
     padding: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: 100,
+    paddingTop: 60,
   },
   header: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
+  },
+  greeting: {
+    ...typography.bodySmall,
+    marginBottom: spacing.xs,
   },
   title: {
     ...typography.h1,
+    marginBottom: spacing.xs,
   },
-  subtitle: {
-    ...typography.bodySmall,
-    marginTop: spacing.xs,
+  date: {
+    ...typography.body,
   },
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   sectionLabel: {
     ...typography.caption,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     marginBottom: spacing.md,
   },
-  studentCard: {
+  studentGrid: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+  },
+  studentCard: {
+    width: 100,
     padding: spacing.md,
-    borderRadius: 12,
-    marginBottom: spacing.sm,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    borderRadius: radius.lg,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  studentInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
+    borderWidth: 1.5,
   },
   studentName: {
-    ...typography.body,
-    fontWeight: '600',
+    ...typography.bodyMedium,
+    marginTop: spacing.sm,
+    textAlign: 'center',
   },
   studentMeta: {
     ...typography.caption,
     marginTop: 2,
   },
   outcomeCard: {
-    borderRadius: 12,
-    overflow: 'hidden',
+    padding: 0,
   },
   outcomeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   outcomeTitle: {
     ...typography.body,
     flex: 1,
+    marginRight: spacing.md,
   },
   levelButtons: {
     flexDirection: 'row',
@@ -444,54 +510,21 @@ const styles = StyleSheet.create({
   levelBtn: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  levelBtnActive: {
-    transform: [{ scale: 1.1 }],
-  },
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: spacing.md,
-    gap: spacing.xs,
-  },
-  nextButtonText: {
-    ...typography.body,
-    fontWeight: '500',
   },
   feedbackInput: {
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
     fontSize: 15,
-    minHeight: 100,
+    minHeight: 120,
     textAlignVertical: 'top',
-    borderWidth: 1,
-  },
-  polishButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    borderRadius: 12,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    gap: spacing.sm,
-  },
-  polishButtonText: {
-    ...typography.body,
-    fontWeight: '500',
+    borderWidth: 1.5,
+    lineHeight: 22,
   },
   polishedCard: {
-    padding: spacing.md,
-    borderRadius: 12,
     marginTop: spacing.md,
-    borderWidth: 1,
   },
   polishedHeader: {
     flexDirection: 'row',
@@ -506,22 +539,5 @@ const styles = StyleSheet.create({
   polishedText: {
     ...typography.bodySmall,
     lineHeight: 20,
-  },
-  sendButton: {
-    marginTop: spacing.lg,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  sendButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  sendButtonText: {
-    color: '#fff',
-    ...typography.body,
-    fontWeight: '600',
   },
 });
