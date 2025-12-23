@@ -212,7 +212,7 @@ export default function StudentsScreen() {
                     name={student.name} 
                     size="lg"
                     variant="gradient"
-                    color={idx % 3 === 0 ? 'orange' : idx % 3 === 1 ? 'mint' : 'purple'}
+                    color="mint"
                   />
 
                   <View style={styles.studentInfo}>
@@ -398,7 +398,7 @@ export default function StudentsScreen() {
                     <NeonButton
                       title="목표 설정"
                       variant="gradient"
-                      glowColor="orange"
+                      glowColor="mint"
                       icon={<ChevronRightIcon size={18} color="#fff" />}
                       iconPosition="right"
                       onPress={() => setStep(2)}
@@ -545,7 +545,7 @@ export default function StudentsScreen() {
                     <Text style={[styles.sectionLabelSmall, { color: colors.textMuted }]}>
                       현재 학습 단원
                     </Text>
-                    <GlowCard variant="neon" glowColor="orange">
+                    <GlowCard variant="neon" glowColor="mint">
                       <Text style={[styles.currentTopicName, { color: colors.text }]}>
                         {getTopicByCode(selectedStudent.currentTopic)?.name || selectedStudent.currentTopic}
                       </Text>

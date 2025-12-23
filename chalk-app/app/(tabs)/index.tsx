@@ -31,7 +31,7 @@ import {
 import { MOCK_STUDENTS, MOCK_OUTCOMES } from '@/data/mockData';
 import { LevelType, OutcomeCheck } from '@/data/types';
 
-// 레벨 라벨 정의
+// 레벨 라벨
 const LEVEL_LABELS: Record<LevelType, string> = {
   high: '잘함',
   mid: '보통',
@@ -99,12 +99,7 @@ export default function TodayScreen() {
       toast.error('오류 발생', '다시 시도해주세요');
     }
 
-    // Reset
-    setSelectedStudentId(null);
-    setFeedback('');
-    setPolishedFeedback('');
-    setStep(1);
-    setOutcomeChecks([]);
+    handleReset();
   };
 
   const handleReset = () => {
@@ -116,8 +111,6 @@ export default function TodayScreen() {
   };
 
   const allOutcomesChecked = outcomeChecks.every(c => c.level !== null);
-
-  // 탭바 높이 계산
   const tabBarHeight = 64 + Math.max(insets.bottom, 16) + 20;
 
   return (
@@ -131,21 +124,14 @@ export default function TodayScreen() {
         onDismiss={toast.hideToast}
       />
 
-      {/* Background gradient */}
+      {/* Background */}
       <View style={styles.glowContainer}>
         <LinearGradient
           colors={[
-            colorScheme === 'dark' ? 'rgba(255, 107, 53, 0.08)' : 'rgba(255, 107, 53, 0.05)',
+            colorScheme === 'dark' ? 'rgba(0, 212, 170, 0.08)' : 'rgba(0, 212, 170, 0.05)',
             'transparent',
           ]}
           style={styles.glowTop}
-        />
-        <LinearGradient
-          colors={[
-            'transparent',
-            colorScheme === 'dark' ? 'rgba(0, 245, 212, 0.05)' : 'rgba(0, 245, 212, 0.03)',
-          ]}
-          style={styles.glowBottom}
         />
       </View>
 
@@ -183,11 +169,11 @@ export default function TodayScreen() {
             title="아직 학생이 없어요"
             description="학생을 먼저 등록하면 수업을 기록할 수 있어요"
             actionLabel="학생 추가하기"
-            onAction={() => {/* 학생 탭으로 이동 */}}
+            onAction={() => {}}
           />
         ) : (
           <>
-            {/* Step 1: Student Selection - 드롭다운 방식 */}
+            {/* Step 1: Student Selection */}
             <Animated.View 
               entering={FadeInDown.delay(200).springify()}
               style={styles.section}
@@ -278,7 +264,7 @@ export default function TodayScreen() {
                       variant="outline"
                       glowColor="mint"
                       onPress={() => setStep(3)}
-                      icon={<ChevronRightIcon size={18} color={colors.tintSecondary} />}
+                      icon={<ChevronRightIcon size={18} color={colors.tint} />}
                       iconPosition="right"
                       fullWidth
                       style={{ marginTop: spacing.md }}
@@ -314,20 +300,18 @@ export default function TodayScreen() {
                   value={feedback}
                   onChangeText={setFeedback}
                   accessibilityLabel="피드백 입력"
-                  accessibilityHint="수업 내용을 입력하세요"
                 />
 
                 <NeonButton
                   title="AI로 다듬기"
                   variant="secondary"
-                  glowColor="purple"
-                  icon={<SparklesIcon size={18} color={colors.tintAccent} />}
+                  glowColor="mint"
+                  icon={<SparklesIcon size={18} color={colors.tint} />}
                   onPress={handlePolishFeedback}
                   loading={isPolishing}
                   disabled={!feedback.trim()}
                   fullWidth
                   style={{ marginTop: spacing.md }}
-                  textStyle={{ color: colors.tintAccent }}
                 />
 
                 {polishedFeedback && (
@@ -338,8 +322,8 @@ export default function TodayScreen() {
                       style={styles.polishedCard}
                     >
                       <View style={styles.polishedHeader}>
-                        <CheckCircleIcon size={16} color={colors.tintSecondary} />
-                        <Text style={[styles.polishedLabel, { color: colors.tintSecondary }]}>
+                        <CheckCircleIcon size={16} color={colors.tint} />
+                        <Text style={[styles.polishedLabel, { color: colors.tint }]}>
                           AI 수정 완료
                         </Text>
                       </View>
@@ -353,7 +337,7 @@ export default function TodayScreen() {
                 <NeonButton
                   title="카카오톡 전송"
                   variant="gradient"
-                  glowColor="orange"
+                  glowColor="mint"
                   icon={<SendIcon size={18} color="#fff" />}
                   onPress={handleSend}
                   disabled={!feedback.trim() && !polishedFeedback}
@@ -369,7 +353,7 @@ export default function TodayScreen() {
   );
 }
 
-// 레벨 버튼 컴포넌트 - 라벨 포함
+// 레벨 버튼
 function LevelButton({
   level,
   selected,
@@ -422,55 +406,25 @@ function getGreeting() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   glowContainer: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    top: 0, left: 0, right: 0, bottom: 0,
     overflow: 'hidden',
   },
   glowTop: {
     position: 'absolute',
-    top: -100,
-    left: -100,
-    right: -100,
+    top: -100, left: -100, right: -100,
     height: 400,
     borderRadius: 200,
   },
-  glowBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-  },
-  header: {
-    marginBottom: spacing.xxl,
-  },
-  greeting: {
-    ...typography.bodySmall,
-    marginBottom: spacing.xs,
-  },
-  title: {
-    ...typography.h1,
-    marginBottom: spacing.xs,
-  },
-  date: {
-    ...typography.body,
-  },
-  section: {
-    marginBottom: spacing.xxl,
-  },
+  scrollView: { flex: 1 },
+  content: { paddingHorizontal: spacing.lg },
+  header: { marginBottom: spacing.xxl },
+  greeting: { ...typography.bodySmall, marginBottom: spacing.xs },
+  title: { ...typography.h1, marginBottom: spacing.xs },
+  date: { ...typography.body },
+  section: { marginBottom: spacing.xxl },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -482,30 +436,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
   },
-  resetText: {
-    ...typography.bodySmall,
-  },
-  outcomeCard: {
-    // padding handled by contentStyle
-  },
+  resetText: { ...typography.bodySmall },
+  outcomeCard: {},
   outcomeRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: spacing.lg,
   },
-  outcomeTitle: {
-    ...typography.body,
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  levelButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
+  outcomeTitle: { ...typography.body, flex: 1, marginRight: spacing.md },
+  levelButtons: { flexDirection: 'row', gap: spacing.sm },
   levelBtn: {
-    width: 36,
-    height: 36,
+    width: 36, height: 36,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
@@ -516,19 +458,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     marginTop: spacing.md,
   },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    ...typography.caption,
-  },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { ...typography.caption },
   feedbackInput: {
     borderRadius: radius.lg,
     padding: spacing.lg,
@@ -538,21 +470,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     lineHeight: 22,
   },
-  polishedCard: {
-    marginTop: spacing.md,
-  },
+  polishedCard: { marginTop: spacing.md },
   polishedHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
-  polishedLabel: {
-    ...typography.caption,
-    fontWeight: '600',
-  },
-  polishedText: {
-    ...typography.bodySmall,
-    lineHeight: 20,
-  },
+  polishedLabel: { ...typography.caption, fontWeight: '600' },
+  polishedText: { ...typography.bodySmall, lineHeight: 20 },
 });

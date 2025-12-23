@@ -6,7 +6,7 @@ import Colors, { radius, spacing, shadows } from '@/constants/Colors';
 import { useColorScheme } from '../useColorScheme';
 
 type CardVariant = 'glass' | 'neon' | 'solid';
-type GlowColor = 'orange' | 'mint' | 'purple';
+type GlowColor = 'mint' | 'light' | 'dark';
 
 interface GlowCardProps {
   children: React.ReactNode;
@@ -19,33 +19,19 @@ interface GlowCardProps {
 export function GlowCard({
   children,
   variant = 'glass',
-  glowColor = 'orange',
+  glowColor = 'mint',
   style,
   contentStyle,
 }: GlowCardProps) {
   const colorScheme = useColorScheme() ?? 'dark';
   const colors = Colors[colorScheme];
 
-  const getGlowBorderColor = () => {
-    switch (glowColor) {
-      case 'mint':
-        return colors.tintSecondary;
-      case 'purple':
-        return colors.tintAccent;
-      case 'orange':
-      default:
-        return colors.tint;
-    }
-  };
-
   const getBackgroundColor = () => {
     switch (variant) {
       case 'solid':
         return colors.backgroundElevated;
       case 'neon':
-        return colorScheme === 'dark'
-          ? 'rgba(255, 255, 255, 0.04)'
-          : 'rgba(0, 0, 0, 0.02)';
+        return colors.brandMuted;
       case 'glass':
       default:
         return colors.cardBackground;
@@ -55,7 +41,7 @@ export function GlowCard({
   const getBorderColor = () => {
     switch (variant) {
       case 'neon':
-        return getGlowBorderColor() + '30';
+        return colors.tint + '40';
       case 'solid':
         return colors.border;
       case 'glass':
@@ -80,7 +66,7 @@ export function GlowCard({
       {variant === 'neon' && (
         <View style={[styles.glowWrapper, { borderRadius: radius.lg }]}>
           <LinearGradient
-            colors={[getGlowBorderColor() + '20', 'transparent']}
+            colors={[colors.tint + '20', 'transparent']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -95,7 +81,7 @@ export function GlowCard({
   );
 }
 
-// Gradient Border Card for special occasions
+// Gradient Border Card
 export function GradientBorderCard({
   children,
   style,
@@ -111,7 +97,7 @@ export function GradientBorderCard({
   return (
     <View style={[styles.gradientBorderContainer, style]}>
       <LinearGradient
-        colors={[colors.gradientStart + '40', colors.gradientEnd + '40']}
+        colors={[colors.tintLight + '50', colors.tint + '50']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBorder}

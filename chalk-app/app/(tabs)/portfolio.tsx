@@ -28,11 +28,28 @@ import {
   VerifiedBadge,
   CheckCircleIcon,
 } from '@/components/Icons';
-import { MOCK_BADGES, MOCK_STATS, generateCalendarData } from '@/data/mockData';
+import { MOCK_BADGES, MOCK_STATS } from '@/data/mockData';
 import { Badge } from '@/data/types';
 
 const { width } = Dimensions.get('window');
-const CALENDAR_DATA = generateCalendarData();
+
+// 이번 주 수업 데이터 (월~일)
+const WEEKLY_DATA = [
+  { day: '월', count: 3, date: 23 },
+  { day: '화', count: 2, date: 24 },
+  { day: '수', count: 0, date: 25 },
+  { day: '목', count: 4, date: 26 },
+  { day: '금', count: 2, date: 27 },
+  { day: '토', count: 1, date: 28 },
+  { day: '일', count: 0, date: 29 },
+];
+
+// 월별 수업 요약
+const MONTHLY_SUMMARY = {
+  thisMonth: { lessons: 18, students: 5, hours: 27 },
+  lastMonth: { lessons: 15, students: 4, hours: 22.5 },
+  growth: 20, // 퍼센트
+};
 
 // 배지 아이콘 맵핑
 const BADGE_ICONS: Record<Badge['icon'], React.FC<{ size: number; color: string }>> = {
@@ -41,21 +58,9 @@ const BADGE_ICONS: Record<Badge['icon'], React.FC<{ size: number; color: string 
   crown: CrownIcon,
   trending: TrendingUpIcon,
   diamond: DiamondIcon,
-  star: FireIcon, // fallback
-  award: CrownIcon, // fallback
+  star: FireIcon,
+  award: CrownIcon,
 };
-
-// 배지 컬러 맵핑
-function getBadgeColor(color: Badge['color'], colors: any): string {
-  switch (color) {
-    case 'orange': return colors.tint;
-    case 'mint': return colors.tintSecondary;
-    case 'purple': return colors.tintAccent;
-    case 'yellow': return colors.warning;
-    case 'blue': return colors.info;
-    default: return colors.tint;
-  }
-}
 
 export default function PortfolioScreen() {
   const colorScheme = useColorScheme() ?? 'dark';
@@ -63,8 +68,11 @@ export default function PortfolioScreen() {
   const insets = useSafeAreaInsets();
   const toast = useToast();
 
+  const maxCount = Math.max(...WEEKLY_DATA.map(d => d.count), 1);
+  const todayIndex = 1; // 화요일 (0-indexed)
+
   const handleShare = async () => {
-    const message = `📊 과외 포트폴리오\n\n${MOCK_STATS.totalLessons}회 수업 완료\n${MOCK_STATS.totalStudents}명 학생 관리\n평균 달성율 ${MOCK_STATS.avgLevel}%\n\n#Chalk 인증 데이터`;
+    const message = `📊 과외 포트폴리오\n\n이번 달 ${MONTHLY_SUMMARY.thisMonth.lessons}회 수업 완료\n${MOCK_STATS.totalStudents}명 학생 관리\n${MOCK_STATS.streak}일 연속 기록 중\n\n#Chalk 인증 데이터`;
     const url = `kakaotalk://send?text=${encodeURIComponent(message)}`;
     
     try {
@@ -78,13 +86,6 @@ export default function PortfolioScreen() {
     } catch (error) {
       toast.error('오류 발생', '다시 시도해주세요');
     }
-  };
-
-  const getCalendarColor = (level: number) => {
-    if (level === 0) return colors.backgroundTertiary;
-    if (level === 1) return colors.tint + '30';
-    if (level === 2) return colors.tint + '60';
-    return colors.tint;
   };
 
   const tabBarHeight = 64 + Math.max(insets.bottom, 16) + 20;
@@ -104,17 +105,10 @@ export default function PortfolioScreen() {
       <View style={styles.glowContainer}>
         <LinearGradient
           colors={[
-            colorScheme === 'dark' ? 'rgba(168, 85, 247, 0.06)' : 'rgba(168, 85, 247, 0.03)',
+            colorScheme === 'dark' ? 'rgba(0, 212, 170, 0.08)' : 'rgba(0, 212, 170, 0.05)',
             'transparent',
           ]}
           style={styles.glowTop}
-        />
-        <LinearGradient
-          colors={[
-            'transparent',
-            colorScheme === 'dark' ? 'rgba(255, 107, 53, 0.04)' : 'rgba(255, 107, 53, 0.02)',
-          ]}
-          style={styles.glowBottom}
         />
       </View>
 
@@ -131,14 +125,14 @@ export default function PortfolioScreen() {
           style={styles.profileSection}
         >
           <View style={styles.profileCard}>
-            <Avatar name="예진" size="xl" variant="gradient" color="purple" />
+            <Avatar name="예진" size="xl" variant="gradient" color="mint" />
             
             <View style={styles.profileInfo}>
               <View style={styles.nameRow}>
                 <Text style={[styles.profileName, { color: colors.text }]}>
                   나의 포트폴리오
                 </Text>
-                <VerifiedBadge size={20} color={colors.tintSecondary} />
+                <VerifiedBadge size={20} color={colors.tint} />
               </View>
               <Text style={[styles.profileBio, { color: colors.textMuted }]}>
                 수학 전문 과외 · {MOCK_STATS.streak}일 연속 기록 중
@@ -147,81 +141,198 @@ export default function PortfolioScreen() {
           </View>
         </Animated.View>
 
-        {/* Stats Grid */}
-        <Animated.View 
-          entering={FadeInDown.delay(200).springify()}
-          style={styles.statsSection}
-        >
-          <View style={styles.statsGrid}>
-            <StatCard
-              value={MOCK_STATS.totalLessons}
-              label="총 수업"
-              color={colors.tint}
-              colors={colors}
-              delay={300}
-            />
-            <StatCard
-              value={MOCK_STATS.totalStudents}
-              label="학생 수"
-              color={colors.tintSecondary}
-              colors={colors}
-              delay={400}
-            />
-            <StatCard
-              value={MOCK_STATS.avgLevel}
-              label="평균 달성"
-              suffix="%"
-              color={colors.tintAccent}
-              colors={colors}
-              delay={500}
-            />
-            <StatCard
-              value={MOCK_STATS.streak}
-              label="연속 기록"
-              icon={<FireIcon size={18} color={colors.tint} />}
-              color={colors.tint}
-              colors={colors}
-              delay={600}
-            />
-          </View>
+        {/* 연속 기록 스트릭 카드 */}
+        <Animated.View entering={FadeInDown.delay(150).springify()}>
+          <GradientBorderCard style={styles.streakCard}>
+            <View style={styles.streakContent}>
+              <View style={styles.streakIconWrap}>
+                <FireIcon size={32} color={colors.tint} />
+              </View>
+              <View style={styles.streakInfo}>
+                <Text style={[styles.streakNumber, { color: colors.tint }]}>
+                  {MOCK_STATS.streak}일
+                </Text>
+                <Text style={[styles.streakLabel, { color: colors.textSecondary }]}>
+                  연속 수업 기록
+                </Text>
+              </View>
+              <View style={styles.streakBadge}>
+                <Text style={[styles.streakBadgeText, { color: colors.tint }]}>
+                  최고 기록!
+                </Text>
+              </View>
+            </View>
+          </GradientBorderCard>
         </Animated.View>
 
-        {/* Activity Calendar */}
+        {/* 이번 주 수업 활동 - 막대 그래프 */}
         <Animated.View 
-          entering={FadeInDown.delay(300).springify()}
+          entering={FadeInDown.delay(200).springify()}
           style={styles.section}
         >
-          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-            활동 기록
-          </Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
+              이번 주 수업
+            </Text>
+            <Text style={[styles.sectionValue, { color: colors.tint }]}>
+              {WEEKLY_DATA.reduce((sum, d) => sum + d.count, 0)}회
+            </Text>
+          </View>
 
           <GlowCard variant="glass">
-            <View style={styles.calendarGrid}>
-              {CALENDAR_DATA.map((level, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    styles.calendarCell,
-                    { backgroundColor: getCalendarColor(level) },
-                  ]}
-                />
-              ))}
-            </View>
-
-            <View style={styles.calendarLegend}>
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>적음</Text>
-              {[0, 1, 2, 3].map(level => (
-                <View
-                  key={level}
-                  style={[styles.legendCell, { backgroundColor: getCalendarColor(level) }]}
-                />
-              ))}
-              <Text style={[styles.legendText, { color: colors.textMuted }]}>많음</Text>
+            <View style={styles.weeklyChart}>
+              {WEEKLY_DATA.map((item, idx) => {
+                const barHeight = item.count > 0 
+                  ? Math.max((item.count / maxCount) * 80, 8) 
+                  : 4;
+                const isToday = idx === todayIndex;
+                
+                return (
+                  <View key={item.day} style={styles.chartColumn}>
+                    {/* 수업 횟수 */}
+                    {item.count > 0 && (
+                      <Text style={[styles.chartCount, { color: colors.tint }]}>
+                        {item.count}
+                      </Text>
+                    )}
+                    
+                    {/* 막대 */}
+                    <View style={styles.barContainer}>
+                      <Animated.View
+                        entering={FadeInUp.delay(250 + idx * 50).springify()}
+                        style={[
+                          styles.bar,
+                          {
+                            height: barHeight,
+                            backgroundColor: item.count > 0 
+                              ? isToday ? colors.tint : colors.tint + '80'
+                              : colors.backgroundTertiary,
+                            borderRadius: radius.sm,
+                          },
+                        ]}
+                      />
+                    </View>
+                    
+                    {/* 요일 */}
+                    <Text style={[
+                      styles.chartDay,
+                      { 
+                        color: isToday ? colors.tint : colors.textMuted,
+                        fontWeight: isToday ? '700' : '500',
+                      }
+                    ]}>
+                      {item.day}
+                    </Text>
+                    
+                    {/* 오늘 표시 */}
+                    {isToday && (
+                      <View style={[styles.todayDot, { backgroundColor: colors.tint }]} />
+                    )}
+                  </View>
+                );
+              })}
             </View>
           </GlowCard>
         </Animated.View>
 
-        {/* Badges - SVG 아이콘 사용 */}
+        {/* 월별 수업 요약 */}
+        <Animated.View 
+          entering={FadeInDown.delay(300).springify()}
+          style={styles.section}
+        >
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
+              12월 수업 현황
+            </Text>
+            <View style={[styles.growthBadge, { backgroundColor: colors.brandMuted }]}>
+              <TrendingUpIcon size={14} color={colors.tint} />
+              <Text style={[styles.growthText, { color: colors.tint }]}>
+                +{MONTHLY_SUMMARY.growth}%
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.monthlyGrid}>
+            <GlowCard variant="glass" style={styles.monthlyCard}>
+              <Text style={[styles.monthlyValue, { color: colors.tint }]}>
+                {MONTHLY_SUMMARY.thisMonth.lessons}
+              </Text>
+              <Text style={[styles.monthlyLabel, { color: colors.textMuted }]}>
+                수업 횟수
+              </Text>
+              <Text style={[styles.monthlyCompare, { color: colors.textMuted }]}>
+                지난달 {MONTHLY_SUMMARY.lastMonth.lessons}회
+              </Text>
+            </GlowCard>
+
+            <GlowCard variant="glass" style={styles.monthlyCard}>
+              <Text style={[styles.monthlyValue, { color: colors.tint }]}>
+                {MONTHLY_SUMMARY.thisMonth.students}
+              </Text>
+              <Text style={[styles.monthlyLabel, { color: colors.textMuted }]}>
+                담당 학생
+              </Text>
+              <Text style={[styles.monthlyCompare, { color: colors.textMuted }]}>
+                지난달 {MONTHLY_SUMMARY.lastMonth.students}명
+              </Text>
+            </GlowCard>
+
+            <GlowCard variant="glass" style={styles.monthlyCard}>
+              <Text style={[styles.monthlyValue, { color: colors.tint }]}>
+                {MONTHLY_SUMMARY.thisMonth.hours}
+              </Text>
+              <Text style={[styles.monthlyLabel, { color: colors.textMuted }]}>
+                총 시간
+              </Text>
+              <Text style={[styles.monthlyCompare, { color: colors.textMuted }]}>
+                지난달 {MONTHLY_SUMMARY.lastMonth.hours}시간
+              </Text>
+            </GlowCard>
+          </View>
+        </Animated.View>
+
+        {/* 누적 통계 */}
+        <Animated.View 
+          entering={FadeInDown.delay(350).springify()}
+          style={styles.section}
+        >
+          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
+            누적 통계
+          </Text>
+          
+          <GlowCard variant="neon" glowColor="mint">
+            <View style={styles.totalStats}>
+              <View style={styles.totalStatItem}>
+                <Text style={[styles.totalStatValue, { color: colors.tint }]}>
+                  {MOCK_STATS.totalLessons}
+                </Text>
+                <Text style={[styles.totalStatLabel, { color: colors.textMuted }]}>
+                  총 수업
+                </Text>
+              </View>
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.totalStatItem}>
+                <Text style={[styles.totalStatValue, { color: colors.tint }]}>
+                  {MOCK_STATS.totalStudents}
+                </Text>
+                <Text style={[styles.totalStatLabel, { color: colors.textMuted }]}>
+                  총 학생
+                </Text>
+              </View>
+              <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+              <View style={styles.totalStatItem}>
+                <Text style={[styles.totalStatValue, { color: colors.tint }]}>
+                  {MOCK_STATS.avgLevel}%
+                </Text>
+                <Text style={[styles.totalStatLabel, { color: colors.textMuted }]}>
+                  평균 달성
+                </Text>
+              </View>
+            </View>
+          </GlowCard>
+        </Animated.View>
+
+        {/* 획득 배지 */}
         <Animated.View 
           entering={FadeInDown.delay(400).springify()}
           style={styles.section}
@@ -234,7 +345,6 @@ export default function PortfolioScreen() {
             <View style={styles.badgesRow}>
               {MOCK_BADGES.map((badge, idx) => {
                 const IconComponent = BADGE_ICONS[badge.icon];
-                const badgeColor = getBadgeColor(badge.color, colors);
                 
                 return (
                   <Animated.View
@@ -246,10 +356,10 @@ export default function PortfolioScreen() {
                         styles.badge,
                         { 
                           backgroundColor: badge.earned 
-                            ? badgeColor + '20'
+                            ? colors.brandMuted
                             : colors.backgroundTertiary,
                           borderColor: badge.earned 
-                            ? badgeColor
+                            ? colors.tint
                             : colors.border,
                         },
                       ]}
@@ -261,7 +371,7 @@ export default function PortfolioScreen() {
                       ]}>
                         <IconComponent 
                           size={28} 
-                          color={badge.earned ? badgeColor : colors.textMuted} 
+                          color={badge.earned ? colors.tint : colors.textMuted} 
                         />
                       </View>
                       <Text style={[
@@ -271,7 +381,6 @@ export default function PortfolioScreen() {
                         {badge.label}
                       </Text>
                       
-                      {/* 잠금 오버레이 */}
                       {!badge.earned && (
                         <View style={[styles.lockedOverlay, { backgroundColor: colors.background + 'DD' }]}>
                           <LockIcon size={20} color={colors.textMuted} />
@@ -285,7 +394,7 @@ export default function PortfolioScreen() {
           </ScrollView>
         </Animated.View>
 
-        {/* Share Button */}
+        {/* 공유 버튼 */}
         <Animated.View 
           entering={FadeInUp.delay(500).springify()}
           style={styles.section}
@@ -293,18 +402,18 @@ export default function PortfolioScreen() {
           <NeonButton
             title="포트폴리오 공유하기"
             variant="gradient"
-            glowColor="orange"
+            glowColor="mint"
             icon={<ShareIcon size={18} color="#fff" />}
             onPress={handleShare}
             fullWidth
           />
         </Animated.View>
 
-        {/* Verified Card */}
-        <Animated.View entering={FadeInUp.delay(600).springify()}>
-          <GradientBorderCard style={styles.verifiedCard}>
+        {/* 인증 카드 */}
+        <Animated.View entering={FadeInUp.delay(550).springify()}>
+          <View style={[styles.verifiedCard, { backgroundColor: colors.brandMuted, borderColor: colors.tint + '30' }]}>
             <View style={styles.verifiedRow}>
-              <CheckCircleIcon size={20} color={colors.tintSecondary} />
+              <CheckCircleIcon size={18} color={colors.tint} />
               <Text style={[styles.verifiedText, { color: colors.text }]}>
                 Chalk 인증 데이터
               </Text>
@@ -312,73 +421,10 @@ export default function PortfolioScreen() {
             <Text style={[styles.verifiedSubtext, { color: colors.textMuted }]}>
               {MOCK_STATS.totalLessons}회의 수업 기록이 검증되었습니다
             </Text>
-          </GradientBorderCard>
+          </View>
         </Animated.View>
       </ScrollView>
     </View>
-  );
-}
-
-// Stat Card 컴포넌트
-function StatCard({
-  value,
-  label,
-  suffix = '',
-  icon,
-  color,
-  colors,
-  delay,
-}: {
-  value: number;
-  label: string;
-  suffix?: string;
-  icon?: React.ReactNode;
-  color: string;
-  colors: any;
-  delay: number;
-}) {
-  const [displayValue, setDisplayValue] = useState(0);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const duration = 1200;
-      const startTime = Date.now();
-
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.round(eased * value);
-        
-        setDisplayValue(current);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        }
-      };
-
-      animate();
-    }, delay);
-
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return (
-    <GlowCard 
-      variant="glass" 
-      style={styles.statCard}
-      contentStyle={styles.statCardContent}
-    >
-      <View style={styles.statValueRow}>
-        {icon}
-        <Text style={[styles.statValue, { color }]}>
-          {displayValue}{suffix}
-        </Text>
-      </View>
-      <Text style={[styles.statLabel, { color: colors.textMuted }]}>
-        {label}
-      </Text>
-    </GlowCard>
   );
 }
 
@@ -391,29 +437,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
+    height: 400,
     overflow: 'hidden',
   },
   glowTop: {
     position: 'absolute',
-    top: -100,
+    top: -150,
     left: -100,
     right: -100,
     height: 400,
     borderRadius: 200,
   },
-  glowBottom: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 300,
-  },
   content: {
     paddingHorizontal: spacing.lg,
   },
   profileSection: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   profileCard: {
     flexDirection: 'row',
@@ -435,70 +474,150 @@ const styles = StyleSheet.create({
     ...typography.body,
     marginTop: spacing.xs,
   },
-  statsSection: {
+  streakCard: {
     marginBottom: spacing.xl,
   },
-  statsGrid: {
+  streakContent: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
+    alignItems: 'center',
   },
-  statCard: {
+  streakIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  streakInfo: {
     flex: 1,
-    minWidth: (width - spacing.lg * 2 - spacing.md) / 2 - spacing.md / 2,
+    marginLeft: spacing.md,
   },
-  statCardContent: {
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  statValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  statValue: {
-    fontSize: 32,
+  streakNumber: {
+    fontSize: 28,
     fontWeight: '800',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
-  statLabel: {
+  streakLabel: {
+    ...typography.bodySmall,
+    marginTop: 2,
+  },
+  streakBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  streakBadgeText: {
     ...typography.caption,
-    marginTop: spacing.xs,
+    fontWeight: '700',
   },
   section: {
     marginBottom: spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   sectionLabel: {
     ...typography.caption,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    marginBottom: spacing.md,
   },
-  calendarGrid: {
+  sectionValue: {
+    ...typography.bodyMedium,
+    fontWeight: '700',
+  },
+  weeklyChart: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: spacing.md,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    height: 140,
+    paddingTop: spacing.md,
   },
-  calendarCell: {
-    width: 14,
-    height: 14,
+  chartColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  chartCount: {
+    ...typography.caption,
+    fontWeight: '700',
+    marginBottom: spacing.xs,
+  },
+  barContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    width: 24,
+  },
+  bar: {
+    width: '100%',
+  },
+  chartDay: {
+    ...typography.caption,
+    marginTop: spacing.sm,
+  },
+  todayDot: {
+    width: 6,
+    height: 6,
     borderRadius: 3,
+    marginTop: spacing.xs,
   },
-  calendarLegend: {
+  growthBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-end',
     gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
-  legendCell: {
-    width: 12,
-    height: 12,
-    borderRadius: 2,
-  },
-  legendText: {
+  growthText: {
     ...typography.caption,
-    marginHorizontal: 4,
+    fontWeight: '700',
+  },
+  monthlyGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  monthlyCard: {
+    flex: 1,
+  },
+  monthlyValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+    textAlign: 'center',
+  },
+  monthlyLabel: {
+    ...typography.caption,
+    textAlign: 'center',
+    marginTop: spacing.xs,
+  },
+  monthlyCompare: {
+    ...typography.caption,
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  totalStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  totalStatItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  totalStatValue: {
+    fontSize: 24,
+    fontWeight: '800',
+    letterSpacing: -0.5,
+  },
+  totalStatLabel: {
+    ...typography.caption,
+    marginTop: spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
   },
   badgesRow: {
     flexDirection: 'row',
@@ -532,7 +651,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   verifiedCard: {
-    marginTop: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
   },
   verifiedRow: {
     flexDirection: 'row',
@@ -545,6 +666,6 @@ const styles = StyleSheet.create({
   verifiedSubtext: {
     ...typography.bodySmall,
     marginTop: spacing.xs,
-    marginLeft: 28,
+    marginLeft: 26,
   },
 });

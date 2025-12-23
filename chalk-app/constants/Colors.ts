@@ -1,16 +1,17 @@
 /**
- * Chalk App - Noir Academy Design System
- * Dark-first, neon accent 테마
+ * Chalk App - Mint Academy Design System
+ * 민트 계열 단일 컬러로 통일된 클린한 테마
  */
 
 // ===========================================
-// BRAND COLORS
+// BRAND COLORS - 민트 계열 통일
 // ===========================================
 const brand = {
-  primary: '#FF6B35', // Neon Orange
-  secondary: '#00F5D4', // Neon Mint
-  accent: '#A855F7', // Electric Purple (AI)
-  textLight: '#F0EDE5', // Chalk cream white
+  primary: '#00D4AA', // Main Mint
+  primaryLight: '#00F5C4', // Light Mint (glow)
+  primaryDark: '#00B894', // Dark Mint
+  accent: '#00E5BF', // Accent Mint
+  textLight: '#F0F5F3', // Mint-tinted white
 };
 
 // ===========================================
@@ -157,29 +158,31 @@ export const componentSizes = {
 };
 
 // ===========================================
-// COLOR THEMES
+// COLOR THEMES - 민트 통일
 // ===========================================
 const Colors = {
   light: {
-    // Text hierarchy (WCAG AA compliant)
+    // Text hierarchy
     text: '#1A1A1A',
     textSecondary: '#52525B',
     textMuted: '#A1A1AA',
 
     // Background hierarchy
-    background: '#FAFAFA',
+    background: '#FAFBFA',
     backgroundElevated: '#FFFFFF',
-    backgroundSurface: '#F4F4F5',
-    backgroundHover: '#E4E4E7',
-    backgroundTertiary: 'rgba(0, 0, 0, 0.03)',
+    backgroundSurface: '#F4F6F5',
+    backgroundHover: '#E8EDEB',
+    backgroundTertiary: 'rgba(0, 212, 170, 0.04)',
 
-    // Brand colors
+    // Brand - 민트 계열
     tint: brand.primary,
-    tintSecondary: '#00D4B4', // 라이트용 민트 (약간 어둡게)
+    tintLight: brand.primaryLight,
+    tintDark: brand.primaryDark,
+    tintSecondary: brand.primary, // 통일
     tintAccent: brand.accent,
-    brandMuted: 'rgba(255, 107, 53, 0.1)',
-    brandSecondaryMuted: 'rgba(0, 212, 180, 0.1)',
-    brandAccentMuted: 'rgba(168, 85, 247, 0.1)',
+    brandMuted: 'rgba(0, 212, 170, 0.1)',
+    brandSecondaryMuted: 'rgba(0, 212, 170, 0.08)',
+    brandAccentMuted: 'rgba(0, 229, 191, 0.1)',
 
     // Tabs
     tabIconDefault: '#A1A1AA',
@@ -190,90 +193,92 @@ const Colors = {
     borderHover: 'rgba(0, 0, 0, 0.15)',
     borderFocus: brand.primary,
 
-    // Status
-    success: '#00D4B4',
-    successMuted: 'rgba(0, 212, 180, 0.1)',
-    warning: '#FF6B35',
-    warningMuted: 'rgba(255, 107, 53, 0.1)',
+    // Status - 민트 베이스
+    success: brand.primary,
+    successMuted: 'rgba(0, 212, 170, 0.1)',
+    warning: '#F59E0B',
+    warningMuted: 'rgba(245, 158, 11, 0.1)',
     error: '#EF4444',
     errorMuted: 'rgba(239, 68, 68, 0.1)',
-    info: '#3B82F6',
-    infoMuted: 'rgba(59, 130, 246, 0.1)',
+    info: brand.primaryLight,
+    infoMuted: 'rgba(0, 245, 196, 0.1)',
 
-    // Level indicators
-    levelHigh: '#00D4B4',
-    levelMid: '#FF6B35',
+    // Level indicators - 민트 톤
+    levelHigh: brand.primary,
+    levelMid: brand.primaryDark,
     levelLow: '#F59E0B',
 
     // Card
     cardBackground: 'rgba(255, 255, 255, 0.8)',
-    cardBorder: 'rgba(0, 0, 0, 0.06)',
+    cardBorder: 'rgba(0, 212, 170, 0.1)',
 
-    // Gradient
-    gradientStart: brand.primary,
-    gradientEnd: '#00D4B4',
+    // Gradient - 민트 계열
+    gradientStart: brand.primaryLight,
+    gradientEnd: brand.primary,
 
     // Glass effect
     glassBackground: 'rgba(255, 255, 255, 0.6)',
-    glassBorder: 'rgba(0, 0, 0, 0.05)',
+    glassBorder: 'rgba(0, 212, 170, 0.08)',
   },
 
   dark: {
-    // Text hierarchy (WCAG AA compliant)
+    // Text hierarchy
     text: brand.textLight,
-    textSecondary: '#A1A1AA',
-    textMuted: '#71717A',
+    textSecondary: '#A8B5B0',
+    textMuted: '#6B7A74',
 
     // Background hierarchy
-    background: '#0D1117',
-    backgroundElevated: '#161B22',
-    backgroundSurface: '#1F242A',
-    backgroundHover: '#2D333B',
-    backgroundTertiary: 'rgba(255, 255, 255, 0.04)',
+    background: '#0A1410',
+    backgroundElevated: '#121E19',
+    backgroundSurface: '#1A2923',
+    backgroundHover: '#243530',
+    backgroundTertiary: 'rgba(0, 212, 170, 0.06)',
 
-    // Brand colors
+    // Brand - 민트 계열
     tint: brand.primary,
-    tintSecondary: brand.secondary,
+    tintLight: brand.primaryLight,
+    tintDark: brand.primaryDark,
+    tintSecondary: brand.primary, // 통일
     tintAccent: brand.accent,
-    brandMuted: 'rgba(255, 107, 53, 0.15)',
-    brandSecondaryMuted: 'rgba(0, 245, 212, 0.15)',
-    brandAccentMuted: 'rgba(168, 85, 247, 0.15)',
+    brandMuted: 'rgba(0, 212, 170, 0.15)',
+    brandSecondaryMuted: 'rgba(0, 212, 170, 0.12)',
+    brandAccentMuted: 'rgba(0, 229, 191, 0.15)',
 
     // Tabs
-    tabIconDefault: '#71717A',
+    tabIconDefault: '#6B7A74',
     tabIconSelected: brand.primary,
 
     // Borders
-    border: 'rgba(255, 255, 255, 0.06)',
-    borderHover: 'rgba(255, 255, 255, 0.12)',
+    border: 'rgba(0, 212, 170, 0.1)',
+    borderHover: 'rgba(0, 212, 170, 0.2)',
     borderFocus: brand.primary,
 
-    // Status
-    success: brand.secondary,
-    successMuted: 'rgba(0, 245, 212, 0.15)',
-    warning: brand.primary,
-    warningMuted: 'rgba(255, 107, 53, 0.15)',
-    error: '#EF4444',
-    errorMuted: 'rgba(239, 68, 68, 0.15)',
-    info: '#60A5FA',
-    infoMuted: 'rgba(96, 165, 250, 0.15)',
+    // Status - 민트 베이스
+    success: brand.primaryLight,
+    successMuted: 'rgba(0, 245, 196, 0.15)',
+    warning: '#FBBF24',
+    warningMuted: 'rgba(251, 191, 36, 0.15)',
+    error: '#F87171',
+    errorMuted: 'rgba(248, 113, 113, 0.15)',
+    info: brand.accent,
+    infoMuted: 'rgba(0, 229, 191, 0.15)',
 
-    // Level indicators
-    levelHigh: brand.secondary,
+    // Level indicators - 민트 톤
+    levelHigh: brand.primaryLight,
     levelMid: brand.primary,
     levelLow: '#FBBF24',
 
     // Card
-    cardBackground: 'rgba(255, 255, 255, 0.03)',
-    cardBorder: 'rgba(255, 255, 255, 0.06)',
+    cardBackground: 'rgba(0, 212, 170, 0.04)',
+    cardBorder: 'rgba(0, 212, 170, 0.12)',
 
-    // Gradient
-    gradientStart: brand.primary,
-    gradientEnd: brand.secondary,
+    // Gradient - 민트 계열
+    gradientStart: brand.primaryLight,
+    gradientEnd: brand.primary,
 
     // Glass effect
-    glassBackground: 'rgba(255, 255, 255, 0.05)',
-    glassBorder: 'rgba(255, 255, 255, 0.08)',
+    glassBackground: 'rgba(0, 212, 170, 0.06)',
+    glassBorder: 'rgba(0, 212, 170, 0.12)',
   },
 };
 

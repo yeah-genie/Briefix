@@ -68,7 +68,7 @@ export function StudentPicker({
               name={selectedStudent.name}
               size="sm"
               variant="gradient"
-              color="orange"
+              color="mint"
             />
             <View style={styles.selectedInfo}>
               <Text style={[styles.selectedName, { color: colors.text }]}>
@@ -174,7 +174,7 @@ export function StudentPicker({
                       name={student.name}
                       size="md"
                       variant={selectedId === student.id ? 'gradient' : 'ring'}
-                      color={idx % 3 === 0 ? 'orange' : idx % 3 === 1 ? 'mint' : 'purple'}
+                      color="mint"
                     />
                     <View style={styles.studentInfo}>
                       <Text style={[styles.studentName, { color: colors.text }]}>

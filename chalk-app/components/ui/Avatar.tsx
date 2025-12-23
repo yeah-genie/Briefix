@@ -7,7 +7,7 @@ import { useColorScheme } from '../useColorScheme';
 
 type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 type AvatarVariant = 'gradient' | 'ring' | 'solid';
-type AvatarColor = 'orange' | 'mint' | 'purple';
+type AvatarColor = 'mint' | 'light' | 'dark';
 
 interface AvatarProps {
   name: string;
@@ -22,7 +22,7 @@ export function Avatar({
   name,
   size = 'md',
   variant = 'gradient',
-  color = 'orange',
+  color = 'mint',
   style,
   textStyle,
 }: AvatarProps) {
@@ -35,13 +35,13 @@ export function Avatar({
 
   const getGradientColors = (): [string, string] => {
     switch (color) {
+      case 'light':
+        return [colors.tintLight, colors.tint];
+      case 'dark':
+        return [colors.tint, colors.tintDark];
       case 'mint':
-        return [colors.tintSecondary, colors.tintSecondary + 'CC'];
-      case 'purple':
-        return [colors.tintAccent, colors.tintAccent + 'CC'];
-      case 'orange':
       default:
-        return [colors.tint, colors.gradientEnd];
+        return [colors.tintLight, colors.tint];
     }
   };
 
@@ -63,21 +63,9 @@ export function Avatar({
 
   // Solid variant
   if (variant === 'solid') {
-    const bgColor = color === 'orange' 
-      ? colors.brandMuted 
-      : color === 'mint' 
-      ? colors.brandSecondaryMuted 
-      : colors.brandAccentMuted;
-
-    const textColor = color === 'orange'
-      ? colors.tint
-      : color === 'mint'
-      ? colors.tintSecondary
-      : colors.tintAccent;
-
     return (
-      <View style={[containerStyle, { backgroundColor: bgColor }]}>
-        <Text style={[textStyles, { color: textColor }]}>{initials}</Text>
+      <View style={[containerStyle, { backgroundColor: colors.brandMuted }]}>
+        <Text style={[textStyles, { color: colors.tint }]}>{initials}</Text>
       </View>
     );
   }
@@ -124,7 +112,6 @@ export function Avatar({
 function getInitials(name: string): string {
   const parts = name.trim().split(' ');
   if (parts.length === 1) {
-    // 한글이면 첫 글자만
     return parts[0].charAt(0);
   }
   return parts

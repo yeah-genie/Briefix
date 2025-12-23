@@ -19,7 +19,7 @@ import Animated, {
 import Colors, { spacing, typography, radius, shadows } from '@/constants/Colors';
 import { useColorScheme } from '../useColorScheme';
 
-type GlowColor = 'orange' | 'mint' | 'purple';
+type GlowColor = 'mint' | 'light' | 'dark';
 type ButtonVariant = 'gradient' | 'outline' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -45,7 +45,7 @@ export function NeonButton({
   onPress,
   variant = 'gradient',
   size = 'md',
-  glowColor = 'orange',
+  glowColor = 'mint',
   loading = false,
   disabled = false,
   fullWidth = false,
@@ -80,17 +80,9 @@ export function NeonButton({
     scale.value = withTiming(1, { duration: 100 });
   };
 
-  // Glow colors
-  const getGlowColors = () => {
-    switch (glowColor) {
-      case 'mint':
-        return [colors.tintSecondary, colors.tintSecondary + '00'];
-      case 'purple':
-        return [colors.tintAccent, colors.tintAccent + '00'];
-      case 'orange':
-      default:
-        return [colors.tint, colors.tint + '00'];
-    }
+  // Glow colors - 민트 계열
+  const getGlowColors = (): [string, string] => {
+    return [colors.tint, colors.tint + '00'];
   };
 
   // Button heights
@@ -112,8 +104,8 @@ export function NeonButton({
     lg: 24,
   }[size];
 
-  // Gradient colors
-  const gradientColors: [string, string] = [colors.gradientStart, colors.gradientEnd];
+  // Gradient colors - 민트 계열
+  const gradientColors: [string, string] = [colors.tintLight, colors.tint];
 
   // Text color
   const getTextColor = () => {
@@ -122,9 +114,9 @@ export function NeonButton({
       case 'gradient':
         return '#FFFFFF';
       case 'outline':
-        return glowColor === 'mint' ? colors.tintSecondary : colors.tint;
+        return colors.tint;
       case 'secondary':
-        return textStyle?.color || colors.tintAccent;
+        return colors.tint;
       case 'ghost':
         return colors.textSecondary;
       default:
@@ -155,14 +147,14 @@ export function NeonButton({
           {
             backgroundColor: 'transparent',
             borderWidth: 1.5,
-            borderColor: glowColor === 'mint' ? colors.tintSecondary : colors.tint,
+            borderColor: colors.tint,
           },
         ];
       case 'secondary':
         return [
           base,
           {
-            backgroundColor: colors.brandAccentMuted,
+            backgroundColor: colors.brandMuted,
           },
         ];
       case 'ghost':
@@ -200,7 +192,7 @@ export function NeonButton({
         {/* Glow layer */}
         <Animated.View style={[styles.glowLayer, glowAnimatedStyle]}>
           <LinearGradient
-            colors={getGlowColors() as [string, string]}
+            colors={getGlowColors()}
             style={styles.glowGradient}
           />
         </Animated.View>
@@ -237,7 +229,7 @@ export function NeonButton({
       {variant === 'outline' && (
         <Animated.View style={[styles.glowLayer, glowAnimatedStyle]}>
           <LinearGradient
-            colors={getGlowColors() as [string, string]}
+            colors={getGlowColors()}
             style={styles.glowGradient}
           />
         </Animated.View>

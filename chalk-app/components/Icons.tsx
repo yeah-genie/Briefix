@@ -122,7 +122,7 @@ export function HomeIcon({ size = 24, color = '#9CA3AF' }: IconProps) {
 // ===================================
 // ACTION ICONS
 // ===================================
-export function SparklesIcon({ size = 24, color = '#A855F7' }: IconProps) {
+export function SparklesIcon({ size = 24, color = '#00D4AA' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -237,7 +237,7 @@ export function XIcon({ size = 24, color = '#9CA3AF' }: IconProps) {
   );
 }
 
-export function CheckCircleIcon({ size = 24, color = '#00F5D4' }: IconProps) {
+export function CheckCircleIcon({ size = 24, color = '#00D4AA' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -282,7 +282,7 @@ export function InfoIcon({ size = 24, color = '#4CC9F0' }: IconProps) {
 // ===================================
 // BADGE ICONS (이모지 대체)
 // ===================================
-export function FireIcon({ size = 24, color = '#FF6B35' }: IconProps) {
+export function FireIcon({ size = 24, color = '#00D4AA' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -429,7 +429,7 @@ export function LockIcon({ size = 24, color = '#6B6962' }: IconProps) {
 // ===================================
 // VERIFIED / STATUS ICONS
 // ===================================
-export function VerifiedBadge({ size = 16, color = '#00F5D4' }: IconProps) {
+export function VerifiedBadge({ size = 16, color = '#00D4AA' }: IconProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 16 16" fill="none">
       <Circle cx="8" cy="8" r="7" fill={color} />
