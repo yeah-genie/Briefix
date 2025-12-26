@@ -1,11 +1,25 @@
+import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { Database } from './database.types';
 
+<<<<<<< HEAD
 // Supabase config - use environment variables
+=======
+>>>>>>> 86c950a4a6e75d8d9eca585c0e32854bc3cb3703
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'YOUR_SUPABASE_URL';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    storage: AsyncStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+  },
+});
 
+<<<<<<< HEAD
 // Types
 export interface Student {
     id: string;
@@ -195,4 +209,36 @@ export async function getDeficitPatterns(): Promise<DeficitPattern[]> {
 
     if (error) throw error;
     return data || [];
+=======
+// Auth helpers
+export async function signUp(email: string, password: string, name: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: { name },
+    },
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signOut() {
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function getCurrentUser() {
+  const { data: { user } } = await supabase.auth.getUser();
+  return user;
+>>>>>>> 86c950a4a6e75d8d9eca585c0e32854bc3cb3703
 }
