@@ -42,6 +42,12 @@
         "projectId": "5098bad7-41db-4a22-9d36-813fb9b99541"
       }
     },
-    "owner": "yejinie-genie"
+    "owner": "yejinie-genie",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/5098bad7-41db-4a22-9d36-813fb9b99541"
+    }
   }
 }
