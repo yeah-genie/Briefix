@@ -398,7 +398,7 @@ export default function LogScreen() {
                               }}
                             >
                               <Text style={[styles.topicItemText, selectedTopicId === topic.id && styles.topicItemTextActive]}>
-                                {topic.nameKr}
+                                {topic.name}
                               </Text>
                             </TouchableOpacity>
                           ))}
@@ -747,7 +747,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary,
     borderRadius: radius.md,
     padding: spacing.lg,
-    color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.default,
     marginTop: spacing.sm,
@@ -877,18 +876,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg.secondary,
     borderRadius: radius.md,
     padding: spacing.lg,
-    color: colors.text.primary,
     minHeight: 100,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: colors.border.default,
     ...typography.body,
+    borderColor: colors.border.default,
   },
   input: {
     backgroundColor: colors.bg.secondary,
     borderRadius: radius.md,
     padding: spacing.lg,
-    color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.default,
     ...typography.body,

@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const ZOOM_CLIENT_ID = Deno.env.get("ZOOM_CLIENT_ID") || "sXqFOx1fTlZZcYZ3hzpyKA"
-const ZOOM_CLIENT_SECRET = Deno.env.get("ZOOM_CLIENT_SECRET") || ""
+const ZOOM_CLIENT_ID = Deno.env.get("ZOOM_CLIENT_ID")
+const ZOOM_CLIENT_SECRET = Deno.env.get("ZOOM_CLIENT_SECRET")
 const SUPABASE_FUNCTION_URL = "https://xnjqsgdapbjnowzwhnaq.supabase.co/functions/v1/zoom-auth"
 
 const corsHeaders = {
@@ -83,14 +83,18 @@ serve(async (req) => {
             })
             const userData = await userResponse.json()
 
-            // Redirect back to app with tokens
-            const appRedirect = new URL(state || "chalkapp://zoom-callback")
-            appRedirect.searchParams.set("access_token", tokenData.access_token)
-            appRedirect.searchParams.set("user_name", userData.first_name || "Zoom User")
-            appRedirect.searchParams.set("user_email", userData.email || "")
-            appRedirect.searchParams.set("refresh_token", tokenData.refresh_token || "")
+            // Better security: Pass tokens via hash fragment to prevent them from hitting server logs
+            const authParams = new URLSearchParams({
+                access_token: tokenData.access_token,
+                user_name: userData.first_name || "Zoom User",
+                user_email: userData.email || "",
+                refresh_token: tokenData.refresh_token || "",
+            });
 
-            return Response.redirect(appRedirect.toString(), 302)
+            const redirectWithToken = `${state || "chalkapp://zoom-callback"}#${authParams.toString()}`;
+            console.log("Redirecting back to app...");
+
+            return Response.redirect(redirectWithToken, 302)
         }
 
         return new Response(JSON.stringify({ error: "Not found" }), {

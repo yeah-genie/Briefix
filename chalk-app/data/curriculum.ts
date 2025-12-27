@@ -96,6 +96,44 @@ export const CURRICULUM_DATA: Curriculum[] = [
             { id: 'kor-9', name: 'Debate & Rhetoric', nameKr: '토론과 수사학', category: 'Speaking', level: 'advanced' },
         ],
     },
+    {
+        subject: 'Music',
+        subjectKr: '음악',
+        topics: [
+            { id: 'mus-1', name: 'Basic Theory', nameKr: '기초 이론', category: 'Theory', level: 'basic' },
+            { id: 'mus-2', name: 'Piano Practice', nameKr: '피아노 연습', category: 'Practice', level: 'intermediate' },
+            { id: 'mus-3', name: 'Vocal Training', nameKr: '보컬 트레이닝', category: 'Practice', level: 'intermediate' },
+        ],
+    },
+    {
+        subject: 'Art',
+        subjectKr: '미술',
+        topics: [
+            { id: 'art-1', name: 'Drawing Basics', nameKr: '드로잉 기초', category: 'Practice', level: 'basic' },
+            { id: 'art-2', name: 'Color Theory', nameKr: '색채학', category: 'Theory', level: 'intermediate' },
+            { id: 'art-3', name: 'Oil Painting', nameKr: '유화', category: 'Practice', level: 'advanced' },
+        ],
+    },
+    {
+        subject: 'Coding',
+        subjectKr: '코딩',
+        topics: [
+            { id: 'cod-1', name: 'Logic & Loops', nameKr: '로직과 반복문', category: 'Basics', level: 'basic' },
+            { id: 'cod-2', name: 'Web Development', nameKr: '웹 개발', category: 'Web', level: 'intermediate' },
+            { id: 'cod-3', name: 'Data Structures', nameKr: '자료구조', category: 'CS', level: 'advanced' },
+        ],
+    },
+    {
+        subject: 'General',
+        subjectKr: '일반',
+        topics: [
+            { id: 'gen-1', name: 'Review Previous Lesson', nameKr: '지난 수업 복습', category: 'General', level: 'basic' },
+            { id: 'gen-2', name: 'Homework Check', nameKr: '숙제 확인', category: 'General', level: 'basic' },
+            { id: 'gen-3', name: 'Concept Introduction', nameKr: '개념 도입', category: 'General', level: 'intermediate' },
+            { id: 'gen-4', name: 'Practice Problems', nameKr: '연습 문제', category: 'General', level: 'intermediate' },
+            { id: 'gen-5', name: 'Test Preparation', nameKr: '시험 대비', category: 'General', level: 'advanced' },
+        ],
+    },
 ];
 
 // Get topics for a specific subject

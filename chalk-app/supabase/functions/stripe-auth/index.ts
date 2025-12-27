@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const STRIPE_CLIENT_ID = "ca_Tg1tZB9Mzz7PuPdjGzUQe4t6CN7od0mw"
-const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY") || ""
+const STRIPE_CLIENT_ID = Deno.env.get("STRIPE_CLIENT_ID")
+const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
 const SUPABASE_FUNCTION_URL = "https://xnjqsgdapbjnowzwhnaq.supabase.co/functions/v1/stripe-auth"
 
 const corsHeaders = {
@@ -74,13 +74,17 @@ serve(async (req) => {
                 return Response.redirect(appRedirect.toString(), 302)
             }
 
-            // Redirect back to app with tokens
-            const appRedirect = new URL(state || "chalkapp://stripe-callback")
-            appRedirect.searchParams.set("access_token", tokenData.access_token)
-            appRedirect.searchParams.set("stripe_user_id", tokenData.stripe_user_id)
-            appRedirect.searchParams.set("refresh_token", tokenData.refresh_token || "")
+            // Better security: Pass tokens via hash fragment to prevent them from hitting server logs
+            const authParams = new URLSearchParams({
+                access_token: tokenData.access_token,
+                stripe_user_id: tokenData.stripe_user_id,
+                refresh_token: tokenData.refresh_token || "",
+            });
 
-            return Response.redirect(appRedirect.toString(), 302)
+            const redirectWithToken = `${state || "chalkapp://stripe-callback"}#${authParams.toString()}`;
+            console.log("Redirecting back to app...");
+
+            return Response.redirect(redirectWithToken, 302)
         }
 
         return new Response(JSON.stringify({ error: "Not found" }), {

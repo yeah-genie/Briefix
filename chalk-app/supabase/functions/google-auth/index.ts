@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID") || "410176806836-7e1sbuc739b5663jmj5n978sfrmk68m9.apps.googleusercontent.com"
-const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET") || ""
+const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID")
+const GOOGLE_CLIENT_SECRET = Deno.env.get("GOOGLE_CLIENT_SECRET")
 const SUPABASE_FUNCTION_URL = "https://xnjqsgdapbjnowzwhnaq.supabase.co/functions/v1/google-auth"
 
 const corsHeaders = {
@@ -89,14 +89,20 @@ serve(async (req) => {
             const userData = await userResponse.json()
 
             // Redirect back to app with tokens
-            const appRedirect = new URL(state || "chalkapp://google-callback")
-            appRedirect.searchParams.set("access_token", tokenData.access_token)
-            appRedirect.searchParams.set("user_name", userData.name || "")
-            appRedirect.searchParams.set("user_email", userData.email || "")
-            appRedirect.searchParams.set("user_photo", userData.picture || "")
-            appRedirect.searchParams.set("refresh_token", tokenData.refresh_token || "")
+            const appRedirectBase = state || "chalkapp://google-callback";
+            // Better security: Pass tokens via hash fragment to prevent them from hitting server logs
+            const authParams = new URLSearchParams({
+                access_token: tokenData.access_token,
+                refresh_token: tokenData.refresh_token || "",
+                user_name: userData.name || "",
+                user_email: userData.email || "",
+                user_photo: userData.picture || "",
+            });
 
-            return Response.redirect(appRedirect.toString(), 302)
+            const redirectWithToken = `${appRedirectBase}#${authParams.toString()}`;
+            console.log("Redirecting back to app...");
+
+            return Response.redirect(redirectWithToken, 302)
         }
 
         return new Response(JSON.stringify({ error: "Not found" }), {

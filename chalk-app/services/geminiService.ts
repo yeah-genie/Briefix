@@ -1,8 +1,10 @@
-// Gemini AI Service for Chalk App
-// Used for generating lesson insights and recommendations
-
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+
+export interface TranscriptionResult {
+    text: string;
+    language: string;
+}
 
 interface GeminiResponse {
     candidates?: Array<{
@@ -197,6 +199,52 @@ Write a brief, encouraging 3-4 sentence report in English for the parents about 
     } catch (error) {
         console.error('[Gemini] Request failed:', error);
         return `${studentName} has completed ${logs.length} recent lessons.`;
+    }
+}
+
+// Generate parent report summary
+export async function transcribeAudio(base64Audio: string, mimeType: string = 'audio/m4a'): Promise<TranscriptionResult> {
+    const prompt = "Transcribe this audio recording from a tutoring lesson accurately. Just return the transcription text, no meta-commentary.";
+
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType: mimeType,
+                                data: base64Audio
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1, // Low temperature for higher accuracy
+                },
+            }),
+        });
+
+        const data: GeminiResponse = await response.json();
+
+        if (data.error) {
+            console.error('[Gemini STT] API Error:', data.error.message);
+            throw new Error(data.error.message);
+        }
+
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        return {
+            text: text.trim(),
+            language: 'unknown' // Could be detected by Gemini if needed
+        };
+    } catch (error) {
+        console.error('[Gemini STT] Request failed:', error);
+        throw error;
     }
 }
 

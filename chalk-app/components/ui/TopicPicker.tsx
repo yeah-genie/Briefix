@@ -21,7 +21,7 @@ export function TopicPicker({ value, onChange, recentTopics }: TopicPickerProps)
       <View>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Quadratic Equations, Essay #3..."
+          placeholder="e.g. Introduction, Practice, Review..."
           placeholderTextColor={colors.text.muted}
           value={value}
           onChangeText={(text) => {
@@ -70,7 +70,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border.default,
     borderRadius: radius.md,
     padding: spacing.lg,
-    color: colors.text.primary,
     ...typography.body,
   },
   suggestions: {

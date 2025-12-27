@@ -90,7 +90,10 @@ export function useZoomAuth() {
 
     const handleCallback = async (url: string) => {
         try {
-            const params = new URLSearchParams(url.split('?')[1]);
+            // Support both query params and hash fragments for security
+            const queryString = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+            const hashString = url.includes('#') ? url.split('#')[1] : '';
+            const params = new URLSearchParams(queryString || hashString);
             const token = params.get('access_token');
             const userName = params.get('user_name');
             const userEmail = params.get('user_email');

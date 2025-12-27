@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Audio } from 'expo-av';
+import * as FileSystem from 'expo-file-system';
 import { colors, radius, spacing, typography } from '@/constants/Colors';
 import { Svg, Path, Rect } from 'react-native-svg';
+import { transcribeAudio } from '@/services/geminiService';
 
 function MicIcon({ size = 24, color = colors.text.primary, active = false }) {
     const fillColor = active ? colors.status.error : "none";
@@ -83,30 +85,33 @@ export function VoiceRecorder({ onTranscription }: VoiceRecorderProps) {
         try {
             await recordingRef.current.stopAndUnloadAsync();
             const uri = recordingRef.current.getURI();
-            recordingRef.current = null;
+            if (!uri) throw new Error('No recording URI found');
 
-            // For now, since we don't have speech-to-text API integrated,
-            // we'll note that a recording was made with the duration
-            const recordedMinutes = Math.floor(duration / 60);
-            const recordedSeconds = duration % 60;
-            const durationStr = recordedMinutes > 0
-                ? `${recordedMinutes}m ${recordedSeconds}s`
-                : `${recordedSeconds}s`;
+            console.log('[VoiceRecorder] Recording stopped, URI:', uri);
+
+            // Read the file as base64
+            const base64Audio = await FileSystem.readAsStringAsync(uri, {
+                encoding: 'base64' as any,
+            });
 
             // Reset audio mode
             await Audio.setAudioModeAsync({
                 allowsRecordingIOS: false,
             });
 
-            // Provide feedback that recording was captured
-            // In a full implementation, this would send to a speech-to-text API
-            onTranscription(`[Voice memo recorded: ${durationStr}] - Audio saved locally`);
+            // Transcribe using Gemini
+            const result = await transcribeAudio(base64Audio);
+
+            // Provide the transcription result
+            onTranscription(result.text);
 
         } catch (error) {
-            console.error('Failed to stop recording:', error);
-            Alert.alert('Error', 'Failed to save recording.');
+            console.error('Failed to process recording:', error);
+            Alert.alert('Error', 'Failed to transcribe recording. It will be saved without transcription.');
+            onTranscription('[Voice memo recorded - transcription failed]');
         } finally {
             setIsProcessing(false);
+            recordingRef.current = null;
         }
     };
 
