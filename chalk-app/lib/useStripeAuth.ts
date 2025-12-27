@@ -8,11 +8,12 @@ WebBrowser.maybeCompleteAuthSession();
 const TOKEN_KEY = 'stripe_access_token';
 const ACCOUNT_KEY = 'stripe_account_id';
 
-// TODO: Replace with your actual Stripe Connect credentials
-// Get these from: https://dashboard.stripe.com/settings/connect
+// Stripe Connect credentials from Stripe Dashboard
 const STRIPE_CONFIG = {
-    clientId: 'YOUR_STRIPE_CLIENT_ID', // ca_xxx
+    clientId: 'ca_RvI2IVS2cq4cLzAFXINOvqXRthEIl3aZ', // Stripe Connect OAuth Client ID
+    publishableKey: 'pk_test_51SifoR245eFJG6JOpxWkJ1l1hJ4IjjA5x2o2SD0JeTkECreyTAjBuEMThPmIctjYrNI2UKSopNJdF0JN6yTyOuuN8G8qAR7KHN',
 };
+
 
 const discovery = {
     authorizationEndpoint: 'https://connect.stripe.com/oauth/authorize',

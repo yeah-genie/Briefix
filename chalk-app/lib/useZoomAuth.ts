@@ -7,12 +7,11 @@ WebBrowser.maybeCompleteAuthSession();
 
 const TOKEN_KEY = 'zoom_access_token';
 
-// TODO: Replace with your actual Zoom OAuth credentials
-// Get these from: https://marketplace.zoom.us
+// Zoom OAuth credentials from Zoom Marketplace
 const ZOOM_CONFIG = {
-    clientId: 'YOUR_ZOOM_CLIENT_ID',
-    clientSecret: 'YOUR_ZOOM_CLIENT_SECRET', // Should be handled server-side!
+    clientId: 'sXqFOx1FTI2Z2cYZ1fZew',
 };
+
 
 const discovery = {
     authorizationEndpoint: 'https://zoom.us/oauth/authorize',

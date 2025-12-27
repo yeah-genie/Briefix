@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
@@ -7,24 +7,23 @@ import { colors, typography, spacing, radius } from '@/constants/Colors';
 import { layout } from '@/components/ui/Theme';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { useData } from '@/lib/DataContext';
+import { useData, ScheduledLesson } from '@/lib/DataContext';
 import { CalendarIcon, ClockIcon, VideoIcon, CheckCircleIcon, UsersIcon } from '@/components/Icons';
-
-// Mock Upcoming Lessons
-const UPCOMING_LESSONS = [
-  { id: '1', studentId: 'mock1', studentName: 'Alice', time: '14:00', subject: 'Math (Calculus)', link: 'https://zoom.us/j/123456789', homeworkDue: 'pg. 42 #1-10' },
-  { id: '2', studentId: 'mock2', studentName: 'Brian', time: '16:30', subject: 'Physics', link: 'https://meet.google.com/abc-defg-hij', homeworkDue: 'Read Chapter 4' },
-];
 
 export default function ScheduleScreen() {
   const router = useRouter();
-  const { lessonLogs, startSession, activeSession } = useData();
+  const { students, scheduledLessons, lessonLogs, startSession, activeSession } = useData();
   const [activeTab, setActiveTab] = useState<'upcoming' | 'history'>('upcoming');
 
-  const handleStartClass = (lesson: typeof UPCOMING_LESSONS[0]) => {
+  // Filter today's lessons
+  const today = new Date().getDay();
+  const todaysLessons = scheduledLessons.filter(lesson => lesson.day === today);
+
+
+  const handleStartClass = (lesson: ScheduledLesson) => {
     if (activeSession) {
-        Alert.alert('Session Active', 'You already have an active class. Please finish it first.');
-        return;
+      Alert.alert('Session Active', 'You already have an active class. Please finish it first.');
+      return;
     }
 
     Alert.alert(
@@ -37,7 +36,7 @@ export default function ScheduleScreen() {
           onPress: () => {
             startSession(lesson.studentId, lesson.studentName);
             // Linking.openURL(lesson.link).catch(err => console.error("Couldn't load page", err));
-            router.push('/(tabs)/');
+            router.push('/');
           }
         }
       ]
@@ -92,7 +91,7 @@ export default function ScheduleScreen() {
               </Card>
 
               <Text style={styles.sectionTitle}>TODAY</Text>
-              {UPCOMING_LESSONS.map((lesson) => (
+              {todaysLessons.map((lesson) => (
                 <Card key={lesson.id} style={styles.lessonCard}>
                   <View style={styles.lessonRow}>
                     <View style={styles.timeContainer}>
@@ -104,10 +103,10 @@ export default function ScheduleScreen() {
                       <Text style={styles.subject}>{lesson.subject}</Text>
                       {/* Homework Due Display */}
                       {lesson.homeworkDue && (
-                          <View style={styles.homeworkBadge}>
-                              <CheckCircleIcon size={12} color={colors.status.warning} />
-                              <Text style={styles.homeworkText}>Due: {lesson.homeworkDue}</Text>
-                          </View>
+                        <View style={styles.homeworkBadge}>
+                          <CheckCircleIcon size={12} color={colors.status.warning} />
+                          <Text style={styles.homeworkText}>Due: {lesson.homeworkDue}</Text>
+                        </View>
                       )}
                     </View>
                   </View>
@@ -135,26 +134,26 @@ export default function ScheduleScreen() {
                 [...lessonLogs].reverse().map((log) => (
                   <Card key={log.id} style={styles.historyCard}>
                     <View style={styles.historyHeader}>
-                        <View style={layout.row}>
-                            <UsersIcon size={14} color={colors.accent.default} />
-                            <Text style={styles.historyName}>{log.studentName}</Text>
-                        </View>
-                        <Text style={styles.historyDate}>{log.date}</Text>
+                      <View style={layout.row}>
+                        <UsersIcon size={14} color={colors.accent.default} />
+                        <Text style={styles.historyName}>{log.studentName}</Text>
+                      </View>
+                      <Text style={styles.historyDate}>{log.date}</Text>
                     </View>
                     <Text style={styles.historyTopic}>{log.topic}</Text>
 
                     {/* Tags */}
                     <View style={styles.tagRow}>
-                        <View style={[styles.ratingTag, { borderColor: getRatingColor(log.rating) }]}>
-                            <Text style={[styles.tagText, { color: getRatingColor(log.rating) }]}>
-                                {log.rating?.toUpperCase()}
-                            </Text>
+                      <View style={[styles.ratingTag, { borderColor: getRatingColor(log.rating) }]}>
+                        <Text style={[styles.tagText, { color: getRatingColor(log.rating) }]}>
+                          {log.rating?.toUpperCase()}
+                        </Text>
+                      </View>
+                      {log.homeworkAssigned && (
+                        <View style={styles.homeworkTag}>
+                          <Text style={styles.homeworkTagText}>HW: {log.homeworkAssigned}</Text>
                         </View>
-                        {log.homeworkAssigned && (
-                            <View style={styles.homeworkTag}>
-                                <Text style={styles.homeworkTagText}>HW: {log.homeworkAssigned}</Text>
-                            </View>
-                        )}
+                      )}
                     </View>
                   </Card>
                 ))
@@ -169,10 +168,10 @@ export default function ScheduleScreen() {
 }
 
 function getRatingColor(rating: string | undefined) {
-    if (rating === 'good') return colors.status.success;
-    if (rating === 'okay') return colors.status.warning;
-    if (rating === 'struggled') return colors.status.error;
-    return colors.text.muted;
+  if (rating === 'good') return colors.status.success;
+  if (rating === 'okay') return colors.status.warning;
+  if (rating === 'struggled') return colors.status.error;
+  return colors.text.muted;
 }
 
 const styles = StyleSheet.create({
@@ -269,14 +268,14 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   homeworkBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 4,
-      gap: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    gap: 4,
   },
   homeworkText: {
-      ...typography.caption,
-      color: colors.status.warning,
+    ...typography.caption,
+    color: colors.status.warning,
   },
 
   // History

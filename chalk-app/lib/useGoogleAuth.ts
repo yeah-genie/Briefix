@@ -7,14 +7,13 @@ WebBrowser.maybeCompleteAuthSession();
 
 const TOKEN_KEY = 'google_access_token';
 
-// TODO: Replace with your actual Google OAuth credentials
-// Get these from: https://console.cloud.google.com
+// Google OAuth credentials from Google Cloud Console
 const GOOGLE_CONFIG = {
-    expoClientId: 'YOUR_EXPO_CLIENT_ID.apps.googleusercontent.com',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+    iosClientId: '410176806836-ke5s4mb9m9slqgr9gfmf3mhucrr8ktjb.apps.googleusercontent.com',
+    webClientId: '410176806836-ke5s4mb9m9slqgr9gfmf3mhucrr8ktjb.apps.googleusercontent.com',
+    androidClientId: '410176806836-ke5s4mb9m9slqgr9gfmf3mhucrr8ktjb.apps.googleusercontent.com',
 };
+
 
 export interface GoogleUser {
     name: string;
