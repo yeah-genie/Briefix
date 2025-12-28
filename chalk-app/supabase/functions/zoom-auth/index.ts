@@ -2,7 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const ZOOM_CLIENT_ID = Deno.env.get("ZOOM_CLIENT_ID")
 const ZOOM_CLIENT_SECRET = Deno.env.get("ZOOM_CLIENT_SECRET")
-const PROJECT_URL = Deno.env.get("PROJECT_URL") || "https://xnjqsgdapbjnowzwhnaq.supabase.co"
+const PROJECT_URL = Deno.env.get("PROJECT_URL")
+
+if (!PROJECT_URL) {
+    console.error("[Zoom Auth] PROJECT_URL environment variable is not set!")
+}
+
 const SUPABASE_FUNCTION_URL = `${PROJECT_URL}/functions/v1/zoom-auth`
 
 

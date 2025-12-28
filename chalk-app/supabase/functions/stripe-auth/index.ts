@@ -2,7 +2,12 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
 const STRIPE_CLIENT_ID = Deno.env.get("STRIPE_CLIENT_ID")
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY")
-const PROJECT_URL = Deno.env.get("PROJECT_URL") || "https://xnjqsgdapbjnowzwhnaq.supabase.co"
+const PROJECT_URL = Deno.env.get("PROJECT_URL")
+
+if (!PROJECT_URL) {
+    console.error("[Stripe Auth] PROJECT_URL environment variable is not set!")
+}
+
 const SUPABASE_FUNCTION_URL = `${PROJECT_URL}/functions/v1/stripe-auth`
 
 

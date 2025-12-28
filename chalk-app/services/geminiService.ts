@@ -19,6 +19,61 @@ interface GeminiResponse {
     };
 }
 
+// Transcribe audio using Gemini multimodal API
+export async function transcribeAudio(base64Audio: string): Promise<TranscriptionResult> {
+    if (!GEMINI_API_KEY) {
+        console.warn('[Gemini] No API key configured');
+        return { text: '[Transcription unavailable - API key not set]', language: 'unknown' };
+    }
+
+    try {
+        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [
+                        {
+                            inline_data: {
+                                mime_type: 'audio/m4a',
+                                data: base64Audio,
+                            }
+                        },
+                        {
+                            text: 'Transcribe this audio recording. Return ONLY the transcribed text, nothing else. If there is no speech, return "[No speech detected]".'
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 1000,
+                },
+            }),
+        });
+
+        const data: GeminiResponse = await response.json();
+
+        if (data.error) {
+            console.error('[Gemini] Transcription error:', data.error.message);
+            return { text: `[Transcription failed: ${data.error.message}]`, language: 'unknown' };
+        }
+
+        const transcribedText = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '[No transcription]';
+
+        // Detect language (simple heuristic)
+        const hasKorean = /[가-힣]/.test(transcribedText);
+        const language = hasKorean ? 'ko' : 'en';
+
+        console.log('[Gemini] Transcription successful:', transcribedText.substring(0, 50));
+        return { text: transcribedText, language };
+    } catch (error) {
+        console.error('[Gemini] Transcription request failed:', error);
+        return { text: '[Transcription failed - network error]', language: 'unknown' };
+    }
+}
+
 export interface LessonInsightInput {
     studentName: string;
     topic: string;
@@ -248,52 +303,6 @@ Write a brief, encouraging 3-4 sentence report in English for the parents about 
     } catch (error) {
         console.error('[Gemini] Request failed:', error);
         return `${studentName} has completed ${logs.length} recent lessons.`;
-    }
-}
-
-// Generate parent report summary
-export async function transcribeAudio(base64Audio: string, mimeType: string = 'audio/m4a'): Promise<TranscriptionResult> {
-    const prompt = "Transcribe this audio recording from a tutoring lesson accurately. Just return the transcription text, no meta-commentary.";
-
-    try {
-        const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                contents: [{
-                    parts: [
-                        { text: prompt },
-                        {
-                            inlineData: {
-                                mimeType: mimeType,
-                                data: base64Audio
-                            }
-                        }
-                    ]
-                }],
-                generationConfig: {
-                    temperature: 0.1, // Low temperature for higher accuracy
-                },
-            }),
-        });
-
-        const data: GeminiResponse = await response.json();
-
-        if (data.error) {
-            console.error('[Gemini STT] API Error:', data.error.message);
-            throw new Error(data.error.message);
-        }
-
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        return {
-            text: text.trim(),
-            language: 'unknown' // Could be detected by Gemini if needed
-        };
-    } catch (error) {
-        console.error('[Gemini STT] Request failed:', error);
-        throw error;
     }
 }
 
