@@ -23,14 +23,18 @@ import { Card } from '@/components/ui/Card';
 import { StudentPicker } from '@/components/ui/StudentPicker';
 import { RatingSelector } from '@/components/ui/RatingSelector';
 import { VoiceRecorder } from '@/components/ui/VoiceRecorder';
+import { RatingNotification } from '@/components/ui/RatingNotification';
 import { useData } from '@/lib/DataContext';
 import { useZoomAuth, ZoomRecording } from '@/lib/useZoomAuth';
+import { useAutoLessonDetection, createAutoLessonLog } from '@/lib/useAutoLessonDetection';
 import {
   SparklesIcon, CheckCircleIcon, LightbulbIcon, TargetIcon,
   BookOpenIcon, EyeIcon, PlusIcon, XIcon, ChevronDownIcon
 } from '@/components/Icons';
 import { getTopicsForSubject, CurriculumTopic } from '@/data/curriculum';
 import { generateLessonInsights, generateTopicRecommendations, TopicRecommendation } from '@/services/geminiService';
+import { generateParentReport, formatReportForShare, generateShareToken, getReportShareUrl, saveReportHistory } from '@/services/reportService';
+import { Share } from 'react-native';
 
 const STRUGGLES = [
   { id: 'understanding', label: 'Understanding', Icon: LightbulbIcon },
@@ -42,13 +46,15 @@ const STRUGGLES = [
 export default function LogScreen() {
   const { students, addStudent, removeStudent, addLessonLog, getLogsForDate, getLogsForStudent, activeSession, endSession, scheduledLessons, removeScheduledLesson } = useData();
   const zoomAuth = useZoomAuth();
+  // Zero-Action: 자동 수업 감지
+  const autoLesson = useAutoLessonDetection(students);
 
   // State
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [customTopic, setCustomTopic] = useState('');
   const [showTopicPicker, setShowTopicPicker] = useState(false);
-  const [rating, setRating] = useState<'good' | 'okay' | 'struggled' | null>('okay');
+  const [rating, setRating] = useState<'good' | 'okay' | 'struggled' | null>(null);
   const [struggles, setStruggles] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [homework, setHomework] = useState('');
@@ -68,6 +74,14 @@ export default function LogScreen() {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
 
+  // Report States
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [generatedReport, setGeneratedReport] = useState('');
+  const [reportShareUrl, setReportShareUrl] = useState('');
+  const [currentReportData, setCurrentReportData] = useState<any>(null);
+  const [currentLessonLogId, setCurrentLessonLogId] = useState<string | null>(null);
+
   // Time-based greeting
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -82,6 +96,10 @@ export default function LogScreen() {
   const todaysLogs = getLogsForDate(today);
   const topics = selectedStudent?.subject ? getTopicsForSubject(selectedStudent.subject) : [];
   const selectedTopic = topics.find(t => t.id === selectedTopicId);
+
+  // Recent Topics for Zero-Action UX
+  const studentLogs = selectedStudentId ? getLogsForStudent(selectedStudentId) : [];
+  const recentTopics = Array.from(new Set(studentLogs.map(l => l.topic))).slice(0, 3);
 
   // Active Session Effect
   useEffect(() => {
@@ -236,8 +254,63 @@ export default function LogScreen() {
     setNotes(prev => prev ? `${prev}\n\n${text}` : text);
   };
 
+  const showShareReportOption = async (
+    student: any,
+    topic: string,
+    rating: string,
+    notes: string,
+    homework: string,
+    lessonLogId: string
+  ) => {
+    setCurrentReportData({ student, topic, rating, notes, homework });
+    setCurrentLessonLogId(lessonLogId);
+    setShowReportModal(true);
+    setIsGeneratingReport(true);
+
+    try {
+      const logs = getLogsForStudent(student.id);
+      const report = await generateParentReport(
+        { id: lessonLogId, topic, rating, duration: lessonDuration, notes, homeworkAssigned: homework } as any,
+        student,
+        logs as any
+      );
+      setGeneratedReport(report);
+
+      const token = generateShareToken();
+      setReportShareUrl(getReportShareUrl(token));
+    } catch (error) {
+      console.error('Failed to generate report:', error);
+      Alert.alert('Error', 'Failed to generate parent report.');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const handleShareReport = async () => {
+    if (!generatedReport || !selectedStudent || !currentLessonLogId) return;
+
+    try {
+      const shareMessage = formatReportForShare(
+        generatedReport,
+        currentReportData.student.name,
+        reportShareUrl
+      );
+
+      const result = await Share.share({
+        message: shareMessage,
+        title: `Lesson Report - ${currentReportData.student.name}`,
+      });
+
+      if (result.action === Share.sharedAction) {
+        await saveReportHistory(currentLessonLogId, generatedReport, 'share_sheet');
+      }
+    } catch (error) {
+      console.error('Sharing failed:', error);
+    }
+  };
+
   const handleSave = () => {
-    if (!selectedStudent || !rating) return;
+    if (!selectedStudent) return;
 
     // Calculate duration if active session
     let duration = 60;
@@ -248,8 +321,9 @@ export default function LogScreen() {
     }
 
     const topic = selectedTopic?.nameKr || customTopic || 'General Review';
+    const finalRating = rating || 'okay'; // Default to 'okay' if skipped
 
-    addLessonLog({
+    const lessonLogId = addLessonLog({
       studentId: selectedStudent.id,
       studentName: selectedStudent.name,
       date: today,
@@ -257,7 +331,7 @@ export default function LogScreen() {
       duration,
       topic,
       topicId: selectedTopicId || undefined,
-      rating,
+      rating: finalRating,
       struggles,
       notes: activeSession ? `[Auto: ${duration}min] ${notes}` : notes,
       homeworkAssigned: homework,
@@ -282,7 +356,14 @@ export default function LogScreen() {
     setSelectedStudentId(null);
     setSelectedTopicId(null);
     setCustomTopic('');
-    setRating('okay'); // Keep default as 'okay' for next lesson
+    setRating(null); // Reset rating for next lesson
+
+    // Offer to share report with parent
+    if (selectedStudent) {
+      setTimeout(() => {
+        showShareReportOption(selectedStudent, topic, finalRating, notes, homework, lessonLogId);
+      }, 500);
+    }
     setStruggles([]);
     setNotes('');
     setHomework('');
@@ -294,6 +375,27 @@ export default function LogScreen() {
 
   return (
     <SafeAreaView style={layout.container} edges={['top']}>
+      {/* Zero-Action: 자동 수업 감지 후 1탭 평가 알림 */}
+      <RatingNotification
+        pendingLesson={autoLesson.getNextPendingLesson() ? {
+          ...autoLesson.getNextPendingLesson()!,
+          topic: autoLesson.getNextPendingLesson()?.topic ?? undefined,
+        } : null}
+        onRate={async (rating) => {
+          const pending = autoLesson.getNextPendingLesson();
+          if (pending) {
+            const log = createAutoLessonLog(pending, rating);
+            const logId = addLessonLog(log);
+            await autoLesson.markAsRated(pending.eventId);
+            // 자동 리포트 생성 및 발송 (학부모 연락처 있을 시)
+            if (pending.student.parentContact) {
+              showShareReportOption(pending.student, log.topic, rating, '', '', logId);
+            }
+          }
+        }}
+        onDismiss={() => { }}
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
@@ -465,6 +567,28 @@ export default function LogScreen() {
                         </View>
                       );
                     })}
+                  </View>
+                )}
+
+                {/* Recent Topics (Zero-Action Card) */}
+                {recentTopics.length > 0 && !selectedTopicId && !customTopic && (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                    {recentTopics.map((topic, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        style={{
+                          backgroundColor: colors.bg.secondary,
+                          paddingVertical: 8,
+                          paddingHorizontal: 16,
+                          borderRadius: radius.md,
+                          borderWidth: 1,
+                          borderColor: colors.border.default,
+                        }}
+                        onPress={() => setCustomTopic(topic)}
+                      >
+                        <Text style={[typography.small, { color: colors.text.secondary }]}>{topic}</Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                 )}
 
@@ -697,6 +821,81 @@ export default function LogScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Report Preview Modal */}
+      <Modal
+        visible={showReportModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowReportModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Lesson Report</Text>
+              <TouchableOpacity onPress={() => setShowReportModal(false)}>
+                <XIcon size={24} color={colors.text.muted} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={styles.reportScroll} showsVerticalScrollIndicator={false}>
+              {isGeneratingReport ? (
+                <View style={styles.reportLoading}>
+                  <ActivityIndicator size="large" color={colors.accent.default} />
+                  <Text style={styles.reportLoadingText}>Generating AI Report...</Text>
+                </View>
+              ) : (
+                <View style={styles.reportContainer}>
+                  <View style={styles.reportCard}>
+                    <Text style={styles.reportHeader}>📚 Lesson Report</Text>
+                    <View style={styles.reportDivider} />
+                    <Text style={styles.reportContent}>{generatedReport}</Text>
+                    <View style={styles.reportDivider} />
+                    <Text style={styles.reportFooter}>Powered by Chalk</Text>
+                  </View>
+
+                  <View style={styles.reportLinkContainer}>
+                    <Text style={styles.reportLinkLabel}>Share Link:</Text>
+                    <Text style={styles.reportLink} numberOfLines={1}>{reportShareUrl}</Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowReportModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Close</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalCancelBtn, { backgroundColor: colors.bg.secondary, borderWidth: 1, borderColor: colors.border.default }, isGeneratingReport && { opacity: 0.5 }]}
+                onPress={async () => {
+                  if (generatedReport) {
+                    const shareMessage = formatReportForShare(generatedReport, currentReportData?.student?.name || '', reportShareUrl);
+                    // Use Share API as clipboard alternative
+                    await Share.share({ message: shareMessage, title: 'Copy Report' });
+                  }
+                }}
+                disabled={isGeneratingReport}
+              >
+                <Text style={styles.modalCancelText}>📋 Copy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalConfirmBtn, isGeneratingReport && { opacity: 0.5 }]}
+                onPress={handleShareReport}
+                disabled={isGeneratingReport}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Text style={styles.modalConfirmText}>Share Report</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
 
       {/* Toast */}
       {showToast && (
@@ -1001,50 +1200,48 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontWeight: '600',
   },
-  recordingDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.status.error,
-  },
+  // Modals
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.xl,
   },
   modalContent: {
     backgroundColor: colors.bg.secondary,
     borderRadius: radius.lg,
     padding: spacing.xl,
-    width: '85%',
-    maxWidth: 340,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
   modalTitle: {
-    ...typography.h3,
+    ...typography.h2,
     color: colors.text.primary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
   },
   modalInput: {
+    ...typography.body,
     backgroundColor: colors.bg.base,
     borderRadius: radius.md,
     padding: spacing.md,
     color: colors.text.primary,
-    fontSize: 16,
     borderWidth: 1,
-    borderColor: colors.border.light,
+    borderColor: colors.border.default,
   },
   modalButtons: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
   },
   modalCancelBtn: {
     flex: 1,
-    paddingVertical: spacing.md,
+    padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.bg.tertiary,
     alignItems: 'center',
@@ -1056,7 +1253,7 @@ const styles = StyleSheet.create({
   },
   modalConfirmBtn: {
     flex: 1,
-    paddingVertical: spacing.md,
+    padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.accent.default,
     alignItems: 'center',
@@ -1066,6 +1263,69 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
+  // Report Preview
+  reportScroll: {
+    maxHeight: 400,
+  },
+  reportLoading: {
+    padding: spacing['2xl'],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reportLoadingText: {
+    ...typography.body,
+    color: colors.text.muted,
+    marginTop: spacing.md,
+  },
+  reportContainer: {
+    paddingVertical: spacing.md,
+  },
+  reportCard: {
+    backgroundColor: colors.bg.secondary,
+    borderRadius: radius.md,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  reportHeader: {
+    ...typography.h3,
+    color: colors.text.primary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  reportDivider: {
+    height: 1,
+    backgroundColor: colors.border.light,
+    marginVertical: spacing.md,
+  },
+  reportContent: {
+    ...typography.body,
+    color: colors.text.primary,
+    lineHeight: 24,
+  },
+  reportFooter: {
+    ...typography.caption,
+    color: colors.text.muted,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  reportLinkContainer: {
+    marginTop: spacing.lg,
+    padding: spacing.md,
+    backgroundColor: colors.bg.tertiary,
+    borderRadius: radius.md,
+  },
+  reportLinkLabel: {
+    ...typography.caption,
+    color: colors.text.muted,
+    marginBottom: 4,
+  },
+  reportLink: {
+    ...typography.small,
+    color: colors.accent.default,
+    textDecorationLine: 'underline',
+  },
+  // Sessions & Recordings
   recordingOption: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1093,6 +1353,12 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     marginTop: 2,
   },
+  recordingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.status.error,
+  },
   autoDurationText: {
     ...typography.caption,
     color: colors.status.success,
@@ -1110,6 +1376,7 @@ const styles = StyleSheet.create({
     color: colors.status.error,
     fontWeight: '600',
   },
+  // Empty State
   emptyState: {
     alignItems: 'center',
     padding: spacing['2xl'],

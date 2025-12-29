@@ -7,9 +7,25 @@ import Constants from 'expo-constants';
 const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
+// Runtime-safe storage wrapper for SSR/build compatibility
+const safeStorage = {
+  getItem: async (key: string) => {
+    if (typeof window === 'undefined') return null;
+    return AsyncStorage.getItem(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (typeof window === 'undefined') return;
+    return AsyncStorage.setItem(key, value);
+  },
+  removeItem: async (key: string) => {
+    if (typeof window === 'undefined') return;
+    return AsyncStorage.removeItem(key);
+  },
+};
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    storage: AsyncStorage,
+    storage: safeStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,

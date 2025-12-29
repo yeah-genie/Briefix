@@ -72,6 +72,40 @@ export default function ScheduleScreen() {
       return;
     }
 
+    // Check for pending homework from last lesson
+    const studentLogs = lessonLogs.filter(l => l.studentId === lesson.studentId);
+    const lastLog = studentLogs.sort((a, b) =>
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )[0];
+
+    const hasPendingHomework = lastLog?.homeworkAssigned && !lastLog?.homeworkCompleted;
+
+    if (hasPendingHomework) {
+      Alert.alert(
+        '📝 Homework Check',
+        `Did ${lesson.studentName} complete their homework?\n\n"${lastLog.homeworkAssigned}"`,
+        [
+          {
+            text: 'Not Done',
+            style: 'destructive',
+            onPress: () => startLessonFlow(lesson)
+          },
+          {
+            text: 'Completed ✓',
+            onPress: () => {
+              // Mark homework as completed
+              updateLessonLog(lastLog.id, { homeworkCompleted: true });
+              startLessonFlow(lesson);
+            }
+          },
+        ]
+      );
+    } else {
+      startLessonFlow(lesson);
+    }
+  };
+
+  const startLessonFlow = (lesson: ScheduledLesson) => {
     Alert.alert(
       'Start Lesson',
       `Start lesson with ${lesson.studentName}?`,

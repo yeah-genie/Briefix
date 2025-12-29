@@ -10,6 +10,7 @@ import { useGoogleAuth } from '@/lib/useGoogleAuth';
 import { useZoomAuth } from '@/lib/useZoomAuth';
 import { useStripeAuth } from '@/lib/useStripeAuth';
 import { useNotifications } from '@/lib/useNotifications';
+import { useAuth } from '@/lib/useAuth';
 import { ChevronRightIcon, UsersIcon } from '@/components/Icons';
 import { StudentManager } from '@/components/ui/StudentManager';
 import { useData } from '@/lib/DataContext';
@@ -31,12 +32,13 @@ export default function AccountScreen() {
   const zoomAuth = useZoomAuth();
   const stripeAuth = useStripeAuth();
   const notifications = useNotifications();
+  const { user, isAuthenticated: isSupabaseAuth, signOut: supabaseSignOut } = useAuth();
   const { students, lessonLogs, scheduledLessons } = useData();
 
-  // Get display name from connected accounts
-  const displayName = googleAuth.user?.name || zoomAuth.user?.name || 'Tutor';
-  const displayEmail = googleAuth.user?.email || zoomAuth.user?.email || 'Connect Google to sync';
-  const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || 'T';
+  // Get display name from Supabase auth or connected accounts
+  const displayName = user?.user_metadata?.name || googleAuth.user?.name || zoomAuth.user?.name || 'Tutor';
+  const displayEmail = user?.email || googleAuth.user?.email || zoomAuth.user?.email || 'Connect to sync';
+  const initials = displayName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() || 'T';
 
   // Connection states for each service
   const [connectionStates, setConnectionStates] = useState<Record<ServiceKey, ConnectionState>>({
@@ -149,7 +151,7 @@ export default function AccountScreen() {
     }
   };
 
-  // Log out - clear all tokens
+  // Log out - clear all tokens including Supabase
   const handleLogOut = async () => {
     Alert.alert(
       'Log Out',
@@ -161,7 +163,10 @@ export default function AccountScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Sign out of all services
+              // Sign out of Supabase first
+              if (isSupabaseAuth) await supabaseSignOut();
+
+              // Sign out of all OAuth services
               if (googleAuth.isAuthenticated) await googleAuth.signOut();
               if (zoomAuth.isAuthenticated) await zoomAuth.signOut();
               if (stripeAuth.isAuthenticated) await stripeAuth.signOut();

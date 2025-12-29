@@ -90,7 +90,7 @@ interface DataContextType {
     removeScheduledLesson: (id: string) => void;
 
     lessonLogs: LessonLog[];
-    addLessonLog: (log: Omit<LessonLog, 'id'>) => void;
+    addLessonLog: (log: Omit<LessonLog, 'id'>) => string;
     removeLessonLog: (id: string) => void;
     getLogsForStudent: (studentId: string) => LessonLog[];
     getLogsForDate: (date: string) => LessonLog[];
@@ -209,12 +209,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     // Lesson log functions
-    const addLessonLog = (log: Omit<LessonLog, 'id'>) => {
-        setLessonLogs(prev => [{ ...log, id: Date.now().toString() }, ...prev]);
+    const addLessonLog = (log: Omit<LessonLog, 'id'>): string => {
+        const id = Date.now().toString();
+        setLessonLogs(prev => [{ ...log, id }, ...prev]);
+        return id;
     };
 
     const removeLessonLog = (id: string) => {
         setLessonLogs(prev => prev.filter(l => l.id !== id));
+    };
+
+    const updateLessonLog = (id: string, updates: Partial<LessonLog>) => {
+        setLessonLogs(prev => prev.map(l => l.id === id ? { ...l, ...updates } : l));
     };
 
     const getLogsForStudent = useCallback((studentId: string) => {
