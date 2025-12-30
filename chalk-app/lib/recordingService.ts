@@ -30,7 +30,7 @@ export interface RecordingEventHandlers {
 class MobileRecordingService {
     private recording: Audio.Recording | null = null;
     private startTime: Date | null = null;
-    private durationInterval: NodeJS.Timeout | null = null;
+    private durationInterval: ReturnType<typeof setInterval> | null = null;
     private currentSession: RecordingSession | null = null;
     private handlers: RecordingEventHandlers = {};
 
@@ -228,7 +228,7 @@ class MobileRecordingService {
         try {
             // Read file as base64
             const base64 = await FileSystem.readAsStringAsync(localUri, {
-                encoding: FileSystem.EncodingType.Base64,
+                encoding: 'base64' as const,
             });
 
             const fileName = `${user.user.id}/${this.currentSession.id}.m4a`;
