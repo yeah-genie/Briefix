@@ -59,6 +59,20 @@ interface Translations {
     noStudents: string;
     noLessons: string;
     noSchedule: string;
+
+    // Recording
+    startRecording: string;
+    stopRecording: string;
+    pauseRecording: string;
+    resumeRecording: string;
+    recording: string;
+    paused: string;
+    recordingComplete: string;
+    aiAutoAnalysis: string;
+    micPermissionRequired: string;
+    loginRequired: string;
+    recordingSaveFailed: string;
+    lesson: string;
 }
 
 const EN: Translations = {
@@ -109,6 +123,20 @@ const EN: Translations = {
     noStudents: 'No students yet',
     noLessons: 'No lessons recorded',
     noSchedule: 'No scheduled lessons',
+
+    // Recording
+    startRecording: 'Start Recording',
+    stopRecording: 'Stop',
+    pauseRecording: 'Pause',
+    resumeRecording: 'Resume',
+    recording: 'Recording...',
+    paused: 'Paused',
+    recordingComplete: 'Recording complete',
+    aiAutoAnalysis: 'AI auto-analysis with one tap',
+    micPermissionRequired: 'Microphone permission required',
+    loginRequired: 'Login required',
+    recordingSaveFailed: 'Failed to save recording',
+    lesson: 'Lesson',
 };
 
 const KO: Translations = {
@@ -159,6 +187,20 @@ const KO: Translations = {
     noStudents: '아직 학생이 없습니다',
     noLessons: '기록된 수업이 없습니다',
     noSchedule: '예정된 수업이 없습니다',
+
+    // Recording
+    startRecording: '수업 녹음 시작',
+    stopRecording: '중지',
+    pauseRecording: '일시정지',
+    resumeRecording: '재개',
+    recording: '녹음 중...',
+    paused: '일시정지',
+    recordingComplete: '녹음 완료',
+    aiAutoAnalysis: '탭 한 번으로 AI가 자동 분석',
+    micPermissionRequired: '마이크 권한이 필요합니다',
+    loginRequired: '로그인이 필요합니다',
+    recordingSaveFailed: '녹음 저장에 실패했습니다',
+    lesson: '수업',
 };
 
 const TRANSLATIONS: Record<Language, Translations> = { en: EN, ko: KO };

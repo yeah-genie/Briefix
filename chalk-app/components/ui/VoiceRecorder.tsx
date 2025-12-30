@@ -205,39 +205,49 @@ const styles = StyleSheet.create({
         color: colors.status.error,
         fontVariant: ['tabular-nums'],
     },
+    // ✨ Hero 스타일 녹음 버튼
     recordButton: {
         backgroundColor: colors.bg.secondary,
-        paddingVertical: spacing.lg,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.border.default,
+        paddingVertical: spacing.xl + spacing.lg, // 더 크게
+        paddingHorizontal: spacing.xl,
+        borderRadius: radius.xl, // 더 둥글게
+        borderWidth: 2,
+        borderColor: colors.accent.default,
         alignItems: 'center',
         justifyContent: 'center',
-        borderStyle: 'dashed',
+        // 그라디언트 대신 그림자 효과
+        shadowColor: colors.accent.default,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 8,
     },
     recordButtonActive: {
         borderColor: colors.status.error,
-        backgroundColor: `${colors.status.error}10`,
-        borderStyle: 'solid',
+        backgroundColor: `${colors.status.error}15`,
+        shadowColor: colors.status.error,
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
     },
     recordButtonProcessing: {
         opacity: 0.7,
+        borderColor: colors.text.muted,
     },
     buttonContent: {
-        flexDirection: 'row',
+        flexDirection: 'column', // 세로 배치
         alignItems: 'center',
-        gap: 8,
+        gap: spacing.sm,
     },
     buttonText: {
-        ...typography.small,
+        ...typography.lg, // 더 큰 글씨
         fontWeight: '600',
     },
     processingText: {
-        ...typography.small,
+        ...typography.sm,
         color: colors.text.secondary,
     },
     permissionText: {
-        ...typography.caption,
+        ...typography.xs,
         color: colors.status.warning,
         textAlign: 'center',
         marginTop: spacing.sm,
