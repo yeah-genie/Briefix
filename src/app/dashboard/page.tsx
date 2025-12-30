@@ -164,29 +164,7 @@ export default async function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-3 gap-3 mb-10">
-                    <Link
-                        href="/dashboard/students"
-                        className="px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center text-[13px] text-zinc-400 hover:text-white hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
-                    >
-                        👩‍🎓 {t('quickActions.students')}
-                    </Link>
-                    <Link
-                        href="/dashboard/analytics"
-                        className="px-4 py-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-center text-[13px] text-purple-400 hover:text-purple-300 hover:bg-purple-500/15 hover:border-purple-500/30 transition-all"
-                    >
-                        📊 {t('quickActions.analytics')}
-                    </Link>
-                    <Link
-                        href={`/tutor/${user.id}`}
-                        className="px-4 py-3 rounded-xl bg-white/[0.02] border border-white/[0.04] text-center text-[13px] text-zinc-400 hover:text-white hover:bg-white/[0.05] hover:border-white/[0.1] transition-all"
-                    >
-                        🌐 {t('quickActions.publicProfile')}
-                    </Link>
-                </div>
-
-                {/* CTA Button */}
+                {/* CTA Button (그라디언트는 여기서만) */}
                 <Link
                     href="/log/new"
                     className="group block w-full py-5 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl text-center relative overflow-hidden mb-8"
@@ -242,10 +220,9 @@ export default async function DashboardPage() {
                                                 <span className="text-zinc-500">
                                                     {t('studentCard.understanding')} {latestScore || '-'}{t('studentCard.points')}
                                                 </span>
-                                                <span className={`flex items-center gap-1 ${
-                                                    trend === 'up' ? 'text-emerald-400' :
-                                                    trend === 'down' ? 'text-red-400' : 'text-zinc-500'
-                                                }`}>
+                                                <span className={`flex items-center gap-1 ${trend === 'up' ? 'text-emerald-400' :
+                                                        trend === 'down' ? 'text-red-400' : 'text-zinc-500'
+                                                    }`}>
                                                     {trend === 'up' && '↑'}
                                                     {trend === 'down' && '↓'}
                                                     {trend === 'stable' && '→'}

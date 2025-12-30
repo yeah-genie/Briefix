@@ -1,45 +1,47 @@
-// Palette based on Tailwind CSS 'Slate' and 'Indigo' (2024 Trending Dark Mode)
-// Reference: chalk-portfolio-extracted
+// Minimalist Dark Mode - Linear/Raycast inspired
+// 핵심: 색상 최소, 여백 최대, 정보는 필요할 때만
 
-const tintColorLight = '#6366F1'; // Indigo 500
-const tintColorDark = '#6366F1';
+const tintColorDark = '#10B981'; // Emerald 500 - Primary brand
 
 export const colors = {
   bg: {
-    base: '#0F172A',      // Slate 900 - Deep, rich blue-grey
-    secondary: '#1E293B', // Slate 800 - Lighter for cards
-    tertiary: '#334155',  // Slate 700 - Inputs/Hover
-    elevated: '#1E293B',  // Slate 800 - Modals
+    base: '#09090B',      // 통일된 배경색
+    secondary: '#111113', // 카드 배경 (미세한 차이)
+    tertiary: '#18181B',  // hover 상태
+    elevated: '#111113',  // 모달
   },
   text: {
-    primary: '#F8FAFC',   // Slate 50 - High contrast white
-    secondary: '#94A3B8', // Slate 400 - Muted text
-    muted: '#64748B',     // Slate 500 - Deep muted
+    primary: '#FAFAFA',   // 거의 화이트
+    secondary: '#A1A1AA', // 뮤트
+    muted: '#71717A',     // 더 뮤트
     inverse: '#FFFFFF',
   },
   accent: {
-    default: '#6366F1',   // Indigo 500 - Primary Brand
-    gradientStart: '#6366F1', // Indigo 500
-    gradientEnd: '#818CF8',   // Indigo 400
-    muted: 'rgba(99, 102, 241, 0.15)', // Low opacity indigo
-    subtle: 'rgba(99, 102, 241, 0.05)',
-    glow: 'rgba(99, 102, 241, 0.4)',
+    default: '#10B981',   // Emerald - 단일 브랜드 컬러
+    hover: '#34D399',     // 밝은 Emerald
+    pressed: '#059669',   // 어두운 Emerald
+    muted: 'rgba(16, 185, 129, 0.15)',
+    subtle: 'rgba(16, 185, 129, 0.05)',
+    glow: 'rgba(16, 185, 129, 0.3)',
+    // 그라디언트는 CTA 버튼에만 사용
+    gradientStart: '#10B981',
+    gradientEnd: '#06B6D4', // Cyan
   },
   status: {
-    success: '#10B981', // Emerald 500
-    warning: '#F59E0B', // Amber 500
-    error: '#EF4444',   // Red 500
-    info: '#3B82F6',    // Blue 500
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#3B82F6',
   },
   border: {
-    default: '#1E293B', // Slate 800 (Card borders)
-    light: '#334155',   // Slate 700 (Separators)
-    focus: '#6366F1',   // Indigo 500
+    default: 'rgba(255, 255, 255, 0.03)', // 더 미세한 테두리
+    light: 'rgba(255, 255, 255, 0.06)',
+    focus: '#10B981',
   },
   level: {
-    high: '#10B981', // Emerald
-    mid: '#F59E0B',  // Amber
-    low: '#EF4444',  // Red
+    high: '#10B981',
+    mid: '#F59E0B',
+    low: '#EF4444',
   },
 };
 
@@ -61,13 +63,24 @@ export const radius = {
   full: 9999,
 };
 
+// 타이포그래피 4단계로 단순화
 export const typography = {
+  // 페이지 타이틀
+  xl: { fontSize: 28, fontWeight: '700' as '700', letterSpacing: -0.5, color: colors.text.primary },
+  // 섹션 타이틀
+  lg: { fontSize: 18, fontWeight: '600' as '600', color: colors.text.primary },
+  // 본문/버튼
+  sm: { fontSize: 14, fontWeight: '500' as '500', lineHeight: 20, color: colors.text.primary },
+  // 보조 정보/캡션
+  xs: { fontSize: 12, fontWeight: '400' as '400', color: colors.text.secondary },
+
+  // 호환성을 위한 별칭
   h1: { fontSize: 28, fontWeight: '700' as '700', letterSpacing: -0.5, color: colors.text.primary },
   h2: { fontSize: 22, fontWeight: '600' as '600', letterSpacing: -0.5, color: colors.text.primary },
   h3: { fontSize: 18, fontWeight: '600' as '600', color: colors.text.primary },
-  body: { fontSize: 16, fontWeight: '400' as '400', lineHeight: 24, color: colors.text.primary },
+  body: { fontSize: 14, fontWeight: '400' as '400', lineHeight: 20, color: colors.text.primary },
   small: { fontSize: 14, fontWeight: '500' as '500', color: colors.text.primary },
-  caption: { fontSize: 12, fontWeight: '500' as '500', color: colors.text.secondary },
+  caption: { fontSize: 12, fontWeight: '400' as '400', color: colors.text.secondary },
 };
 
 
@@ -103,19 +116,20 @@ export const components = {
   },
 };
 
+// 다크 모드 전용 (라이트 모드 미지원)
 export default {
   light: {
-    text: '#0F172A',
+    text: '#09090B',
     background: '#FFFFFF',
-    tint: tintColorLight,
-    tabIconDefault: '#94A3B8',
-    tabIconSelected: tintColorLight,
+    tint: tintColorDark,
+    tabIconDefault: '#71717A',
+    tabIconSelected: tintColorDark,
   },
   dark: {
-    text: '#F8FAFC',
-    background: '#0F172A',
+    text: '#FAFAFA',
+    background: '#09090B',
     tint: tintColorDark,
-    tabIconDefault: '#475569',
+    tabIconDefault: '#71717A',
     tabIconSelected: tintColorDark,
   },
 };
