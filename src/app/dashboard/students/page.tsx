@@ -4,16 +4,20 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import type { Student } from '@/lib/supabase/types';
 
 export default function StudentsPage() {
+    const t = useTranslations('students');
+    const tCommon = useTranslations('common');
+    const tNav = useTranslations('nav');
+
     const [students, setStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingStudent, setEditingStudent] = useState<Student | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
 
-    // Form state
     const [formData, setFormData] = useState({
         name: '',
         subject: '',
@@ -44,7 +48,7 @@ export default function StudentsPage() {
         const { data, error } = await supabase
             .from('students')
             .select('*')
-            .eq('tutor_id', tutorId)  // FIXED: Filter by tutor_id
+            .eq('tutor_id', tutorId)
             .order('created_at', { ascending: false });
 
         if (!error && data) {
@@ -55,11 +59,9 @@ export default function StudentsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (!userId) return;
 
         if (editingStudent) {
-            // Update
             const { error } = await supabase
                 .from('students')
                 .update({
@@ -77,11 +79,10 @@ export default function StudentsPage() {
                 closeModal();
             }
         } else {
-            // Create - FIXED: Use tutor_id instead of user_id
             const { error } = await supabase
                 .from('students')
                 .insert({
-                    tutor_id: userId,  // FIXED
+                    tutor_id: userId,
                     name: formData.name,
                     subject: formData.subject || null,
                     grade: formData.grade || null,
@@ -99,7 +100,7 @@ export default function StudentsPage() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('정말 이 학생을 삭제하시겠습니까?')) return;
+        if (!confirm(t('actions.confirmDelete'))) return;
         if (!userId) return;
 
         const { error } = await supabase.from('students').delete().eq('id', id);
@@ -144,11 +145,11 @@ export default function StudentsPage() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'active':
-                return <span className="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 rounded-full">활성</span>;
+                return <span className="px-2 py-0.5 text-[10px] bg-emerald-500/20 text-emerald-400 rounded-full">{t('status.active')}</span>;
             case 'paused':
-                return <span className="px-2 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-400 rounded-full">일시정지</span>;
+                return <span className="px-2 py-0.5 text-[10px] bg-yellow-500/20 text-yellow-400 rounded-full">{t('status.paused')}</span>;
             case 'completed':
-                return <span className="px-2 py-0.5 text-[10px] bg-zinc-500/20 text-zinc-400 rounded-full">완료</span>;
+                return <span className="px-2 py-0.5 text-[10px] bg-zinc-500/20 text-zinc-400 rounded-full">{t('status.completed')}</span>;
             default:
                 return null;
         }
@@ -156,20 +157,19 @@ export default function StudentsPage() {
 
     return (
         <div className="min-h-screen bg-[#050506] text-white">
-            {/* Header */}
             <header className="sticky top-0 z-50 bg-[#050506]/80 backdrop-blur-2xl border-b border-white/[0.04]">
                 <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href="/dashboard" className="text-zinc-500 hover:text-white transition">
-                            ← 대시보드
+                            ← {tNav('dashboard')}
                         </Link>
-                        <h1 className="text-lg font-semibold">학생 관리</h1>
+                        <h1 className="text-lg font-semibold">{t('title')}</h1>
                     </div>
                     <button
                         onClick={() => setShowAddModal(true)}
                         className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-sm font-medium transition"
                     >
-                        + 학생 추가
+                        + {t('addStudent')}
                     </button>
                 </div>
             </header>
@@ -178,7 +178,7 @@ export default function StudentsPage() {
                 {isLoading ? (
                     <div className="text-center py-16 text-zinc-500">
                         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                        로딩 중...
+                        {tCommon('loading')}
                     </div>
                 ) : students.length === 0 ? (
                     <div className="text-center py-16">
@@ -187,12 +187,12 @@ export default function StudentsPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                             </svg>
                         </div>
-                        <p className="text-zinc-500 mb-4">아직 등록된 학생이 없습니다</p>
+                        <p className="text-zinc-500 mb-4">{t('noStudents.title')}</p>
                         <button
                             onClick={() => setShowAddModal(true)}
                             className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-medium transition"
                         >
-                            첫 학생 추가하기
+                            {t('noStudents.action')}
                         </button>
                     </div>
                 ) : (
@@ -226,12 +226,6 @@ export default function StudentsPage() {
                                                 </div>
                                             </div>
                                         </div>
-                                        {student.goal && (
-                                            <p className="mt-3 text-sm text-zinc-500 ml-[52px]">목표: {student.goal}</p>
-                                        )}
-                                        {student.parent_contact && (
-                                            <p className="mt-1 text-sm text-zinc-600 ml-[52px]">학부모: {student.parent_contact}</p>
-                                        )}
                                     </Link>
                                     <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
                                         <button
@@ -242,19 +236,19 @@ export default function StudentsPage() {
                                                     : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
                                             }`}
                                         >
-                                            {student.status === 'active' ? '일시정지' : '활성화'}
+                                            {student.status === 'active' ? t('actions.pause') : t('actions.activate')}
                                         </button>
                                         <button
                                             onClick={(e) => { e.preventDefault(); openEditModal(student); }}
                                             className="px-3 py-1.5 text-xs bg-white/[0.05] hover:bg-white/[0.1] rounded-lg transition"
                                         >
-                                            수정
+                                            {tCommon('edit')}
                                         </button>
                                         <button
                                             onClick={(e) => { e.preventDefault(); handleDelete(student.id); }}
                                             className="px-3 py-1.5 text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 rounded-lg transition"
                                         >
-                                            삭제
+                                            {tCommon('delete')}
                                         </button>
                                     </div>
                                 </div>
@@ -264,7 +258,6 @@ export default function StudentsPage() {
                 )}
             </main>
 
-            {/* Add/Edit Modal */}
             <AnimatePresence>
                 {showAddModal && (
                     <motion.div
@@ -282,75 +275,75 @@ export default function StudentsPage() {
                             className="bg-[#0a0a0b] rounded-2xl p-6 w-full max-w-md border border-white/[0.08]"
                         >
                             <h2 className="text-xl font-semibold mb-6">
-                                {editingStudent ? '학생 수정' : '새 학생 추가'}
+                                {editingStudent ? t('editStudent') : t('addStudent')}
                             </h2>
 
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm text-zinc-400 mb-2">이름 *</label>
+                                    <label className="block text-sm text-zinc-400 mb-2">{t('form.name')} *</label>
                                     <input
                                         type="text"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition"
                                         required
-                                        placeholder="김지민"
+                                        placeholder={t('form.namePlaceholder')}
                                     />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-sm text-zinc-400 mb-2">과목</label>
+                                        <label className="block text-sm text-zinc-400 mb-2">{t('form.subject')}</label>
                                         <input
                                             type="text"
                                             value={formData.subject}
                                             onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                                             className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition"
-                                            placeholder="수학"
+                                            placeholder={t('form.subjectPlaceholder')}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-zinc-400 mb-2">학년</label>
+                                        <label className="block text-sm text-zinc-400 mb-2">{t('form.grade')}</label>
                                         <input
                                             type="text"
                                             value={formData.grade}
                                             onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
                                             className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition"
-                                            placeholder="고1"
+                                            placeholder={t('form.gradePlaceholder')}
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-zinc-400 mb-2">목표</label>
+                                    <label className="block text-sm text-zinc-400 mb-2">{t('form.goal')}</label>
                                     <input
                                         type="text"
                                         value={formData.goal}
                                         onChange={(e) => setFormData({ ...formData, goal: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition"
-                                        placeholder="수능 1등급"
+                                        placeholder={t('form.goalPlaceholder')}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-zinc-400 mb-2">학부모 연락처 (알림 발송용)</label>
+                                    <label className="block text-sm text-zinc-400 mb-2">{t('form.parentContact')}</label>
                                     <input
                                         type="text"
                                         value={formData.parent_contact}
                                         onChange={(e) => setFormData({ ...formData, parent_contact: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition"
-                                        placeholder="010-1234-5678"
+                                        placeholder={t('form.parentContactPlaceholder')}
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm text-zinc-400 mb-2">메모</label>
+                                    <label className="block text-sm text-zinc-400 mb-2">{t('form.notes')}</label>
                                     <textarea
                                         value={formData.notes}
                                         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                         className="w-full px-4 py-3 bg-white/[0.03] border border-white/[0.06] rounded-xl focus:border-emerald-500 outline-none transition resize-none"
                                         rows={2}
-                                        placeholder="학생에 대한 메모..."
+                                        placeholder={t('form.notesPlaceholder')}
                                     />
                                 </div>
 
@@ -360,13 +353,13 @@ export default function StudentsPage() {
                                         onClick={closeModal}
                                         className="flex-1 px-4 py-3 bg-white/[0.05] hover:bg-white/[0.1] rounded-xl transition"
                                     >
-                                        취소
+                                        {tCommon('cancel')}
                                     </button>
                                     <button
                                         type="submit"
                                         className="flex-1 px-4 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-xl font-medium transition"
                                     >
-                                        {editingStudent ? '수정' : '추가'}
+                                        {editingStudent ? tCommon('edit') : tCommon('add')}
                                     </button>
                                 </div>
                             </form>

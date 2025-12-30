@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { studentAnalyticsService } from '@/services/analytics/StudentAnalyticsService';
 import type { Student, StudentAnalytics, LessonLog } from '@/lib/supabase/types';
 import type { StudentGrowthData } from '@/services/analytics/StudentAnalyticsService';
@@ -13,6 +14,8 @@ interface PageProps {
 }
 
 export default function StudentDetailPage({ params }: PageProps) {
+    const t = useTranslations('studentDetail');
+    const tCommon = useTranslations('common');
     const { id: studentId } = use(params);
     const [student, setStudent] = useState<Student | null>(null);
     const [analytics, setAnalytics] = useState<StudentAnalytics | null>(null);
