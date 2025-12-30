@@ -17,14 +17,6 @@ import { StudentGrowthChart } from '@/components/ui/StudentGrowthChart';
 import { ParentReportCard } from '@/components/ui/ParentReportCard';
 import { AnnualReport } from '@/components/ui/AnnualReport';
 
-// Achievement definitions
-const ACHIEVEMENTS = [
-  { id: 'first_lesson', name: 'First Lesson', desc: 'You logged your first lesson', icon: FireIcon, requirement: 1 },
-  { id: 'ten_lessons', name: '10 Lessons', desc: 'Completed 10 lessons', icon: TrendingUpIcon, requirement: 10 },
-  { id: 'fifty_lessons', name: '50 Lessons', desc: 'Completed 50 lessons', icon: CrownIcon, requirement: 50 },
-  { id: 'hundred_lessons', name: '100 Lessons', desc: '100 lessons! Amazing!', icon: DiamondIcon, requirement: 100 },
-];
-
 export default function PortfolioScreen() {
   const { lessonLogs, students, getLogsForStudent } = useData();
   const googleAuth = useGoogleAuth();
@@ -56,17 +48,11 @@ export default function PortfolioScreen() {
     return days;
   }, [lessonLogs]);
 
-  // Achievements earned
-  const earnedAchievements = useMemo(() => {
-    return ACHIEVEMENTS.filter(a => totalSessions >= a.requirement);
-  }, [totalSessions]);
-
   // Share portfolio
   const handleShare = async () => {
     const verifications = [];
     if (googleAuth.isAuthenticated) verifications.push('✓ Google Calendar Verified');
     if (zoomAuth.isAuthenticated) verifications.push('✓ Zoom Verified');
-    if (stripeAuth.isAuthenticated) verifications.push('✓ Stripe Payment Verified');
 
     const content = `
 📚 Chalk Tutor Portfolio
@@ -77,8 +63,6 @@ export default function PortfolioScreen() {
 👨‍🎓 ${totalStudents} Students
 
 ${verifications.length > 0 ? '\n🔐 Verifications\n' + verifications.join('\n') : ''}
-
-${earnedAchievements.length > 0 ? '\n🏆 Achievements\n' + earnedAchievements.map(a => `• ${a.name}`).join('\n') : ''}
 
 ---
 Chalk - Portfolio App for Tutors
@@ -116,12 +100,6 @@ Chalk - Portfolio App for Tutors
             <View style={styles.badge}>
               <VerifiedBadge size={14} color="#2D8CFF" />
               <Text style={styles.badgeText}>Zoom</Text>
-            </View>
-          )}
-          {stripeAuth.isAuthenticated && (
-            <View style={styles.badge}>
-              <VerifiedBadge size={14} color="#635BFF" />
-              <Text style={styles.badgeText}>Stripe</Text>
             </View>
           )}
         </View>
@@ -168,31 +146,6 @@ Chalk - Portfolio App for Tutors
             ))}
           </View>
         </Card>
-
-        {/* Achievements */}
-        <Text style={styles.sectionTitle}>Achievements</Text>
-        <View style={styles.achievementsGrid}>
-          {ACHIEVEMENTS.map(achievement => {
-            const isEarned = totalSessions >= achievement.requirement;
-            const Icon = achievement.icon;
-            return (
-              <View
-                key={achievement.id}
-                style={[styles.achievementCard, !isEarned && styles.achievementLocked]}
-              >
-                <View style={[styles.achievementIcon, isEarned && { backgroundColor: colors.accent.default + '20' }]}>
-                  <Icon size={24} color={isEarned ? colors.accent.default : colors.text.muted} />
-                </View>
-                <Text style={[styles.achievementName, !isEarned && { color: colors.text.muted }]}>
-                  {achievement.name}
-                </Text>
-                <Text style={styles.achievementDesc}>
-                  {isEarned ? achievement.desc : `${achievement.requirement} needed`}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
 
         {/* Students Section */}
         <Text style={styles.sectionTitle}>Students</Text>

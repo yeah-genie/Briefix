@@ -32,7 +32,7 @@ export default function ScheduleScreen() {
   const { students, scheduledLessons, addScheduledLesson, removeScheduledLesson, updateScheduledLesson, lessonLogs, startSession, activeSession } = useData();
   const googleAuth = useGoogleAuth();
 
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'week' | 'settle' | 'history'>('upcoming');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'week'>('upcoming');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingLesson, setEditingLesson] = useState<ScheduledLesson | null>(null);
 
@@ -219,8 +219,6 @@ export default function ScheduleScreen() {
           {[
             { key: 'upcoming', label: 'Today' },
             { key: 'week', label: 'Week' },
-            { key: 'settle', label: 'Settle' },
-            { key: 'history', label: 'History' },
           ].map(tab => (
             <TouchableOpacity
               key={tab.key}
@@ -367,44 +365,6 @@ export default function ScheduleScreen() {
                 ))}
               </View>
             </ScrollView>
-          )}
-
-          {/* SETTLE VIEW */}
-          {activeTab === 'settle' && (
-            <SettlementView />
-          )}
-
-          {/* HISTORY VIEW */}
-          {activeTab === 'history' && (
-            <View style={styles.list}>
-              {lessonLogs.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <ClockIcon size={48} color={colors.bg.tertiary} />
-                  <Text style={styles.emptyText}>No lessons logged yet.</Text>
-                </View>
-              ) : (
-                [...lessonLogs].slice(0, 20).map((log) => (
-                  <Card key={log.id} style={styles.historyCard}>
-                    <View style={styles.historyHeader}>
-                      <View style={layout.row}>
-                        <View style={[styles.colorDot, { backgroundColor: getStudentColor(log.studentId) }]} />
-                        <Text style={styles.historyName}>{log.studentName}</Text>
-                      </View>
-                      <Text style={styles.historyDate}>{log.date}</Text>
-                    </View>
-                    <Text style={styles.historyTopic}>{log.topic}</Text>
-                    <View style={styles.tagRow}>
-                      <View style={[styles.ratingTag, { borderColor: getRatingColor(log.rating) }]}>
-                        <Text style={[styles.tagText, { color: getRatingColor(log.rating) }]}>
-                          {log.rating === 'good' ? 'Good' : log.rating === 'okay' ? 'Okay' : 'Struggled'}
-                        </Text>
-                      </View>
-                      <Text style={styles.durationText}>{log.duration}min</Text>
-                    </View>
-                  </Card>
-                ))
-              )}
-            </View>
           )}
 
         </ScrollView>
