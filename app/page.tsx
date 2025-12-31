@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 // ===================================
 // CHALK - LANDING PAGE
@@ -12,9 +13,7 @@ export default function Home() {
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-[#27272a] bg-[#09090b]/80 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center">
-              <span className="text-black font-bold text-sm">C</span>
-            </div>
+            <Image src="/logo.png" alt="Chalk" width={32} height={32} className="rounded-lg" />
             <span className="font-semibold text-lg">Chalk</span>
           </div>
           <nav className="flex items-center gap-6">
@@ -72,11 +71,11 @@ export default function Home() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 max-w-lg mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#10b981]">80+</div>
+              <div className="text-3xl font-bold text-[#10b981]">300+</div>
               <div className="text-sm text-[#71717a]">AP Topics</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-[#10b981]">2</div>
+              <div className="text-3xl font-bold text-[#10b981]">7</div>
               <div className="text-sm text-[#71717a]">Subjects</div>
             </div>
             <div className="text-center">
@@ -187,7 +186,7 @@ export default function Home() {
           </div>
 
           <p className="text-center text-[#71717a] text-sm mt-8">
-            More AP subjects coming soon
+            + AP Biology, Psychology, US History, World History, Chemistry
           </p>
         </div>
       </section>
@@ -196,9 +195,7 @@ export default function Home() {
       <footer className="py-12 px-6 border-t border-[#27272a]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-[#10b981] rounded-md flex items-center justify-center">
-              <span className="text-black font-bold text-xs">C</span>
-            </div>
+            <Image src="/logo.png" alt="Chalk" width={24} height={24} className="rounded-md" />
             <span className="font-medium">Chalk</span>
           </div>
           <p className="text-sm text-[#71717a]">

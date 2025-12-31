@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { AP_CALCULUS_AB, getUnits, getTopicsByUnit } from "@/lib/knowledge-graph";
 
 // ===================================
@@ -50,9 +51,7 @@ export default function Dashboard() {
             <aside className="fixed left-0 top-0 bottom-0 w-64 bg-[#0f0f12] border-r border-[#27272a] p-4">
                 {/* Logo */}
                 <div className="flex items-center gap-2 mb-8">
-                    <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center">
-                        <span className="text-black font-bold text-sm">C</span>
-                    </div>
+                    <Image src="/logo.png" alt="Chalk" width={32} height={32} className="rounded-lg" />
                     <span className="font-semibold text-lg">Chalk</span>
                 </div>
 
