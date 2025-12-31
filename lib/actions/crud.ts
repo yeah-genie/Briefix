@@ -102,14 +102,10 @@ export async function registerStudentWithSubject(data: {
             tutorId = existingStudents[0].tutor_id;
             console.log(`[Register] Using fallback tutor_id from existing student: ${tutorId}`);
         } else {
-            // Last resort: If no students exist, we might need a default UUID
-            // This will likely fail if the UUID doesn't exist in the auth.users table
-            // but it's better than blocking the user entirely.
-            // Using a common placeholder UUID or returning error if nothing works.
-            return {
-                success: false,
-                error: "Authentication required and no existing tutor found to fallback to. Please log in once."
-            };
+            // TEMPORARY: Generate a random UUID as tutor_id when no existing data
+            // This is a workaround as requested by the user ("인증 잠시 풀어봐").
+            tutorId = crypto.randomUUID();
+            console.warn(`[Register] No existing students. Using generated tutor_id: ${tutorId}`);
         }
     }
 
