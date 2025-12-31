@@ -131,7 +131,7 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                                                 {session.status}
                                             </span>
                                         </div>
-                                        <h4 className="font-bold text-sm mb-2 group-hover:text-[#10b981] transition-colors">{session.title || 'Untitled Session'}</h4>
+                                        <h4 className="font-bold text-sm mb-2 group-hover:text-[#10b981] transition-colors">Session: {session.subject_id}</h4>
                                         <p className="text-xs text-[#71717a] line-clamp-2 leading-relaxed">
                                             Evidence of learning captured. Automatic transcript and mastery updates applied.
                                         </p>

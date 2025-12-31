@@ -21,7 +21,7 @@ const UNIT_COLORS = [
 ];
 
 export default function MasteryMap({ subjectCode, mastery, onTopicClick }: MasteryMapProps) {
-    const graphRef = useRef<ForceGraphMethods>();
+    const graphRef = useRef<ForceGraphMethods | undefined>(undefined);
     const containerRef = useRef<HTMLDivElement>(null);
     const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
     const [hoverNode, setHoverNode] = useState<any>(null);

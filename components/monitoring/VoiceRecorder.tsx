@@ -288,7 +288,7 @@ export default function VoiceRecorder({ studentId, subjectId, onRecordingComplet
                         </button>
                         {!success && (
                             <button
-                                onClick={submitRecording}
+                                onClick={() => submitRecording()}
                                 disabled={isAnalyzing}
                                 className="flex-[2] py-3 px-4 bg-[#10b981] hover:bg-emerald-400 text-black rounded-xl text-sm font-black transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
                             >

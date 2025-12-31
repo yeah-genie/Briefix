@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { AddSessionModal } from "@/components/modals";
 import { createSession } from "@/lib/actions/crud";
@@ -22,7 +22,7 @@ function formatDate(isoString: string): string {
     });
 }
 
-function getStatusBadge(status: string): JSX.Element {
+function getStatusBadge(status: string): React.ReactNode {
     switch (status) {
         case "scheduled":
             return <span className="px-2 py-0.5 rounded text-[10px] uppercase font-bold bg-[#18181b] text-[#71717a] border border-[#27272a]">Scheduled</span>;
@@ -46,14 +46,15 @@ export function SessionList({ initialSessions, students }: SessionListProps) {
         filter === "all" ? true : s.status === filter
     );
 
-    const handleAddSession = async (data: { student_id: string; subject_id: string; scheduled_at: Date; duration: number }) => {
+    const handleAddSession = async (data: { student_id: string; subject_id: string; scheduled_at: string; duration_minutes?: number; notes?: string }) => {
         const result = await createSession({
             student_id: data.student_id,
             subject_id: data.subject_id,
-            scheduled_at: data.scheduled_at.toISOString(),
-            duration_minutes: data.duration,
+            scheduled_at: data.scheduled_at,
+            duration_minutes: data.duration_minutes,
             status: "scheduled",
             tutor_id: "placeholder",
+            notes: data.notes
         });
 
         if (result) {

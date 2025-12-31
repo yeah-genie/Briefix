@@ -326,7 +326,7 @@ export async function getTopicInsights(studentId: string, topicId: string) {
     }
 
     return {
-        text: data.sessions?.notes || "No recent AI narrative available for this topic.",
+        text: (Array.isArray(data.sessions) ? data.sessions[0]?.notes : (data.sessions as any)?.notes) || "No recent AI narrative available for this topic.",
         nextSteps: [
             "Review session evidence below",
             "Focus on identified struggle points",

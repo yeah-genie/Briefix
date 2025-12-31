@@ -466,8 +466,16 @@ export function getUnits(subject: Subject): Topic[] {
     return subject.topics.filter(t => !t.parentId);
 }
 
-// Helper: Get child topics
 export function getTopicsByUnit(subject: Subject, unitId: string): Topic[] {
     return subject.topics.filter(t => t.parentId === unitId);
+}
+
+// Helper: Find topic by code across all subjects
+export function findTopicByCode(code: string): Topic | undefined {
+    for (const subject of AP_SUBJECTS) {
+        const topic = subject.topics.find(t => t.code === code);
+        if (topic) return topic;
+    }
+    return undefined;
 }
 
