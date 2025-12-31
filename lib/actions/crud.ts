@@ -82,103 +82,30 @@ export async function registerStudentWithSubject(data: {
     parent_email?: string;
     notes?: string;
 }) {
-    // Use admin client to bypass RLS - TEMPORARY workaround
-    const { createAdminSupabaseClient } = await import("@/lib/supabase/server");
-    const supabase = createAdminSupabaseClient();
+    const supabase = await createServerSupabaseClient();
 
-    // Try to get authenticated user first
-    const serverSupabase = await createServerSupabaseClient();
-    const { data: { user } } = await serverSupabase.auth.getUser();
+    // Try to get authenticated user (optional)
+    const { data: { user } } = await supabase.auth.getUser();
+    const tutorId = user?.id || null;
 
-    let tutorId = user?.id;
-
-    // FALLBACK: If not authenticated, create or find a default tutor
-    if (!tutorId) {
-        console.warn("[Register] No authenticated user. Creating/finding default tutor.");
-
-        // Check if a default tutor exists
-        const { data: existingTutor } = await supabase
-            .from("tutors")
-            .select("id")
-            .eq("email", "demo@chalk.app")
-            .single();
-
-        if (existingTutor) {
-            tutorId = existingTutor.id;
-            console.log(`[Register] Using existing demo tutor: ${tutorId}`);
-        } else {
-            // Create a demo tutor
-            const { data: newTutor, error: tutorError } = await supabase
-                .from("tutors")
-                .insert({
-                    email: "demo@chalk.app",
-                    name: "Demo Tutor"
-                })
-                .select()
-                .single();
-
-            if (tutorError) {
-                console.error("[Register] Error creating demo tutor:", tutorError);
-                return { success: false, error: `Failed to create demo tutor: ${tutorError.message}` };
-            }
-
-            tutorId = newTutor.id;
-            console.log(`[Register] Created new demo tutor: ${tutorId}`);
-        }
-    }
+    console.log(`[Register] Creating student. Tutor ID: ${tutorId || 'null (anonymous)'}`);
 
     let finalSubjectId = data.subject_id;
 
-    // 1. Handle Custom Subject
+    // 1. Handle Custom Subject (skip if errors)
     if (data.subject_id === 'custom' && data.custom_subject_name) {
-        const boardId = 'custom';
-        const subjectId = data.custom_subject_name.toLowerCase().replace(/\s+/g, '-');
-
-        console.log(`[Register] Creating custom subject: ${data.custom_subject_name} (${subjectId})`);
-
-        // Ensure board exists
-        const { error: bError } = await supabase.from('kb_boards').upsert({ id: boardId, name: 'Custom' });
-        if (bError) {
-            console.error("[Register] Error upserting board:", bError);
-            // Continue anyway - board might not be required
-        }
-
-        const { data: newSubject, error: sError } = await supabase
-            .from('kb_subjects')
-            .upsert({
-                id: subjectId,
-                board_id: boardId,
-                name: data.custom_subject_name,
-                icon: 'BookOpen'
-            })
-            .select()
-            .single();
-
-        if (sError) {
-            console.error("[Register] Error upserting subject:", sError);
-            // Continue anyway
-        }
-
-        if (newSubject) {
-            finalSubjectId = newSubject.id;
-
-            // Create a default Module for the new subject
-            await supabase.from('kb_modules').upsert({
-                id: `${subjectId}-default`,
-                subject_id: subjectId,
-                name: 'Main Curriculum'
-            });
-        }
+        console.log(`[Register] Custom subject requested: ${data.custom_subject_name}`);
+        finalSubjectId = data.custom_subject_name; // Use the name directly
     }
 
-    // 2. Create Student using admin client
+    // 2. Create Student - tutor_id is nullable per schema
     const { data: studentData, error: studentError } = await supabase
         .from("students")
         .insert({
             name: data.name,
-            subject: finalSubjectId,  // Note: schema uses 'subject' not 'subject_id'
-            parent_email: data.parent_email,
-            notes: data.notes,
+            subject: finalSubjectId,
+            parent_email: data.parent_email || null,
+            notes: data.notes || null,
             tutor_id: tutorId
         })
         .select()
@@ -194,6 +121,7 @@ export async function registerStudentWithSubject(data: {
 
     return { success: true, data: studentData };
 }
+
 
 
 export async function updateStudent(id: string, updates: Partial<StudentInsert>): Promise<boolean> {
