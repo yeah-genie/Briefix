@@ -11,17 +11,28 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 // Types
+// Types
+export interface SuggestedNode {
+    type: 'unit' | 'topic';
+    name: string;
+    description?: string;
+    parentId?: string; // unitId for topics
+}
+
 export interface ExtractedTopic {
     topicId: string;
     topicName: string;
     status: 'new' | 'learning' | 'reviewed' | 'mastered';
     confidence: number; // 0-100
     evidence: string; // 관련 문장
+    futureImpact?: string; // 미래 단원에 미칠 영향 예측
+    isNew?: boolean; // AI가 새로 제안한 토픽인지 여부
 }
 
 export interface ExtractionResult {
     success: boolean;
     topics: ExtractedTopic[];
+    suggestedNewNodes?: SuggestedNode[];
     summary?: string;
     error?: string;
 }
@@ -30,22 +41,16 @@ export interface ExtractionResult {
 // TOPIC EXTRACTION PROMPT
 // ===================================
 
-function buildExtractionPrompt(transcript: string, subjectId: string): string {
-    const subject = AP_SUBJECTS.find(s => s.id === subjectId);
-    if (!subject) {
-        return '';
-    }
+function buildExtractionPrompt(transcript: string, subjectName: string, existingTopics: any[]): string {
+    const topicList = existingTopics.length > 0
+        ? existingTopics.map(t => `- ${t.id}: ${t.name}`).join('\n')
+        : "(No existing topics found for this subject yet. This is a blank slate.)";
 
-    // Get all topic codes and names for this subject
-    const topicList = subject.topics
-        .map(t => `- ${t.id}: ${t.name}`)
-        .join('\n');
+    return `You are an expert tutor analyzing a tutoring session transcript. 
 
-    return `You are an expert AP tutor analyzing a tutoring session transcript.
+SUBJECT: ${subjectName}
 
-SUBJECT: ${subject.name}
-
-AVAILABLE TOPICS (use ONLY these topic IDs):
+EXISTING KNOWLEDGE GRAPH (use these IDs if matching):
 ${topicList}
 
 TRANSCRIPT:
@@ -53,35 +58,55 @@ TRANSCRIPT:
 ${transcript}
 """
 
-TASK: Analyze the transcript and identify which topics were covered. For each topic:
-1. Determine the student's understanding level based on their responses
+TASK 1: ANALYZE EXISTING TOPICS
+Identify which of the EXISTING topics were covered. For each:
+1. Determine the student's understanding level
 2. Extract a direct quote as evidence
+3. Predict "futureImpact" on other topics.
+
+TASK 2: TAXONOMY INGESTION (Human-in-the-loop suggestion)
+If the transcript covers important material that does NOT fit into any EXISTING topics:
+1. Suggest a new "topic" (and a "unit" if needed).
+2. High-level structure: Subject -> Unit -> Topic.
+3. Keep names professional and consistent with general educational standards for ${subjectName}.
 
 UNDERSTANDING LEVELS:
-- "new": Topic introduced but student shows confusion or no prior knowledge
-- "learning": Student understands basics but makes errors or needs hints
-- "reviewed": Student recalls and applies concepts with minor mistakes
-- "mastered": Student explains correctly, solves problems independently
+- "new": Introduced but student shows confusion
+- "learning": Understands basics but needs hints
+- "reviewed": Applies concepts with minor mistakes
+- "mastered": Explains correctly and solves independently
 
 RESPOND IN THIS EXACT JSON FORMAT:
 {
     "topics": [
         {
-            "topicId": "calc-1-2",
+            "topicId": "existing-id",
             "status": "learning",
-            "confidence": 75,
-            "evidence": "Student said: 'So the limit is when x approaches...'"
+            "confidence": 90,
+            "evidence": "...quote...",
+            "futureImpact": "...prediction..."
         }
     ],
-    "summary": "Brief 1-2 sentence summary of what was covered"
+    "suggestedNewNodes": [
+        {
+            "type": "unit",
+            "name": "Linear Equations",
+            "description": "Fundamental algebraic structures"
+        },
+        {
+            "type": "topic",
+            "name": "Solving for X",
+            "description": "Basic arithmetic operations to isolate variables",
+            "parentId": "suggested-unit-name-or-id"
+        }
+    ],
+    "summary": "Brief 1-2 sentence summary"
 }
 
 RULES:
-- Only include topics that were actually discussed
-- Use EXACT topic IDs from the list above
-- Confidence is how certain you are about the status (0-100)
-- Evidence must be a direct quote or paraphrase from the transcript
-- Return empty topics array if no relevant topics found
+- Only include topics actually discussed.
+- Taxonomy Ingestion is CRITICAL for 'blank slate' subjects.
+- If it's a new subject, suggest a coherent Unit/Topic structure for what was taught today.
 `;
 }
 
@@ -91,22 +116,17 @@ RULES:
 
 export async function extractTopicsFromTranscript(
     transcript: string,
-    subjectId: string
+    subjectId: string,
+    subjectName: string,
+    existingTopics: Topic[]
 ): Promise<ExtractionResult> {
     // Check for API key
     if (!GEMINI_API_KEY) {
-        console.warn('[Gemini] No API key - returning demo data');
-        return getDemoExtractionResult(subjectId);
+        console.warn('[Gemini] No API key - returning empty result');
+        return { success: true, topics: [] };
     }
 
-    const prompt = buildExtractionPrompt(transcript, subjectId);
-    if (!prompt) {
-        return {
-            success: false,
-            topics: [],
-            error: 'Invalid subject ID',
-        };
-    }
+    const prompt = buildExtractionPrompt(transcript, subjectName, existingTopics);
 
     try {
         const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -121,7 +141,7 @@ export async function extractTopicsFromTranscript(
                     },
                 ],
                 generationConfig: {
-                    temperature: 0.2, // Low for consistency
+                    temperature: 0.2,
                     topP: 0.8,
                     maxOutputTokens: 2048,
                 },
@@ -142,12 +162,11 @@ export async function extractTopicsFromTranscript(
         }
 
         const parsed = JSON.parse(jsonMatch[0]);
-        const subject = AP_SUBJECTS.find(s => s.id === subjectId);
 
         // Validate and enrich topic data
         const validatedTopics: ExtractedTopic[] = [];
         for (const topic of parsed.topics || []) {
-            const foundTopic = subject?.topics.find(t => t.id === topic.topicId);
+            const foundTopic = existingTopics.find(t => t.id === topic.topicId);
             if (foundTopic) {
                 validatedTopics.push({
                     topicId: topic.topicId,
@@ -155,6 +174,7 @@ export async function extractTopicsFromTranscript(
                     status: topic.status || 'new',
                     confidence: Math.min(100, Math.max(0, topic.confidence || 50)),
                     evidence: topic.evidence || '',
+                    futureImpact: topic.futureImpact || '',
                 });
             }
         }
@@ -162,6 +182,7 @@ export async function extractTopicsFromTranscript(
         return {
             success: true,
             topics: validatedTopics,
+            suggestedNewNodes: parsed.suggestedNewNodes || [],
             summary: parsed.summary,
         };
     } catch (error) {
@@ -226,47 +247,4 @@ function getDemoExtractionResult(subjectId: string): ExtractionResult {
     };
 }
 
-// ===================================
-// MASTERY SCORE CALCULATION
-// ===================================
-
-const STATUS_SCORES: Record<string, number> = {
-    'new': 10,
-    'learning': 35,
-    'reviewed': 65,
-    'mastered': 90,
-};
-
-const TIME_DECAY_RATE = 0.05; // 5% per week
-
-export function calculateNewScore(
-    currentScore: number,
-    newStatus: 'new' | 'learning' | 'reviewed' | 'mastered',
-    confidence: number,
-    daysSinceLastReview?: number
-): number {
-    // Apply time decay if applicable
-    let decayedScore = currentScore;
-    if (daysSinceLastReview && daysSinceLastReview > 0) {
-        const weeksElapsed = daysSinceLastReview / 7;
-        const decay = Math.pow(1 - TIME_DECAY_RATE, weeksElapsed);
-        decayedScore = currentScore * decay;
-    }
-
-    // Calculate target score from new status
-    const targetScore = STATUS_SCORES[newStatus] || 0;
-
-    // Blend with confidence weight
-    const confidenceWeight = confidence / 100;
-    const newScore = decayedScore + (targetScore - decayedScore) * confidenceWeight * 0.5;
-
-    // Clamp to 0-100
-    return Math.round(Math.min(100, Math.max(0, newScore)));
-}
-
-export function getStatusFromScore(score: number): 'new' | 'learning' | 'reviewed' | 'mastered' {
-    if (score >= 80) return 'mastered';
-    if (score >= 55) return 'reviewed';
-    if (score >= 25) return 'learning';
-    return 'new';
-}
+// Utility functions removed to lib/mastery-utils.ts to fix Server Action async requirement.

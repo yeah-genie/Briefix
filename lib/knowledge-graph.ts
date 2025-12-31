@@ -11,6 +11,7 @@ export interface Topic {
     parentId?: string;
     importance: 'core' | 'advanced' | 'optional';
     examWeight?: number; // % of AP exam
+    dependencies?: string[]; // topic codes required before this topic
 }
 
 export interface Subject {
@@ -32,7 +33,7 @@ export const AP_CALCULUS_AB: Subject = {
         // Unit 1: Limits and Continuity (10-12%)
         { id: 'calc-1', code: 'limits', name: 'Limits and Continuity', importance: 'core', examWeight: 11 },
         { id: 'calc-1-1', code: 'limits.intro', name: 'Introducing Calculus: Can Change Occur at an Instant?', parentId: 'calc-1', importance: 'core' },
-        { id: 'calc-1-2', code: 'limits.definition', name: 'Defining Limits and Using Limit Notation', parentId: 'calc-1', importance: 'core' },
+        { id: 'calc-1-2', code: 'limits.definition', name: 'Defining Limits and Using Limit Notation', parentId: 'calc-1', importance: 'core', dependencies: ['limits.intro'] },
         { id: 'calc-1-3', code: 'limits.estimation', name: 'Estimating Limit Values from Graphs', parentId: 'calc-1', importance: 'core' },
         { id: 'calc-1-4', code: 'limits.tables', name: 'Estimating Limit Values from Tables', parentId: 'calc-1', importance: 'core' },
         { id: 'calc-1-5', code: 'limits.properties', name: 'Determining Limits Using Algebraic Properties', parentId: 'calc-1', importance: 'core' },
@@ -44,7 +45,7 @@ export const AP_CALCULUS_AB: Subject = {
         // Unit 2: Differentiation Definition (10-12%)
         { id: 'calc-2', code: 'diff-def', name: 'Differentiation: Definition and Fundamental Properties', importance: 'core', examWeight: 11 },
         { id: 'calc-2-1', code: 'diff.definition', name: 'Defining Average and Instantaneous Rates of Change', parentId: 'calc-2', importance: 'core' },
-        { id: 'calc-2-2', code: 'diff.derivative-def', name: 'Defining the Derivative of a Function', parentId: 'calc-2', importance: 'core' },
+        { id: 'calc-2-2', code: 'diff.derivative-def', name: 'Defining the Derivative of a Function', parentId: 'calc-2', importance: 'core', dependencies: ['limits.definition', 'limits.continuity'] },
         { id: 'calc-2-3', code: 'diff.estimating', name: 'Estimating Derivatives of a Function at a Point', parentId: 'calc-2', importance: 'core' },
         { id: 'calc-2-4', code: 'diff.differentiability', name: 'Connecting Differentiability and Continuity', parentId: 'calc-2', importance: 'core' },
         { id: 'calc-2-5', code: 'diff.power-rule', name: 'Power Rule', parentId: 'calc-2', importance: 'core' },
@@ -468,15 +469,5 @@ export function getUnits(subject: Subject): Topic[] {
 // Helper: Get child topics
 export function getTopicsByUnit(subject: Subject, unitId: string): Topic[] {
     return subject.topics.filter(t => t.parentId === unitId);
-}
-
-// Helper: Find topic by code
-export function findTopicByCode(subject: Subject, code: string): Topic | undefined {
-    return subject.topics.find(t => t.code === code);
-}
-
-// Helper: Get total topic count
-export function getTotalTopicCount(): number {
-    return AP_SUBJECTS.reduce((acc, subject) => acc + subject.topics.length, 0);
 }
 

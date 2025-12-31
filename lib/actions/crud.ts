@@ -24,6 +24,20 @@ export async function getStudents(): Promise<Student[]> {
     return data || [];
 }
 
+export async function getSubjects() {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+        .from('kb_subjects')
+        .select('id, name')
+        .order('name');
+
+    if (error) {
+        console.error("Error fetching subjects:", error);
+        return [];
+    }
+    return data || [];
+}
+
 export async function getStudent(id: string): Promise<Student | null> {
     const supabase = await createServerSupabaseClient();
 
@@ -41,7 +55,7 @@ export async function getStudent(id: string): Promise<Student | null> {
     return data;
 }
 
-export async function createStudent(student: StudentInsert): Promise<Student | null> {
+export async function createStudent(student: StudentInsert) {
     const supabase = await createServerSupabaseClient();
 
     const { data, error } = await supabase
@@ -52,13 +66,85 @@ export async function createStudent(student: StudentInsert): Promise<Student | n
 
     if (error) {
         console.error("Error creating student:", error);
-        return null;
+        return { success: false, error: `Student database error: ${error.message}` };
     }
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/students");
 
-    return data;
+    return { success: true, data };
+}
+
+export async function registerStudentWithSubject(data: {
+    name: string;
+    subject_id: string;
+    custom_subject_name?: string;
+    parent_email?: string;
+    notes?: string;
+}) {
+    const supabase = await createServerSupabaseClient();
+
+    // Auth check first
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Authentication required" };
+
+    let finalSubjectId = data.subject_id;
+
+    // 1. Handle Custom Subject
+    if (data.subject_id === 'custom' && data.custom_subject_name) {
+        const boardId = 'custom';
+        const subjectId = data.custom_subject_name.toLowerCase().replace(/\s+/g, '-');
+
+        console.log(`[Register] Creating custom subject: ${data.custom_subject_name} (${subjectId})`);
+
+        // Ensure board exists
+        const { error: bError } = await supabase.from('kb_boards').upsert({ id: boardId, name: 'Custom' });
+        if (bError) {
+            console.error("[Register] Error upserting board:", bError);
+            throw new Error(`Board error: ${bError.message}`);
+        }
+
+        const { data: newSubject, error: sError } = await supabase
+            .from('kb_subjects')
+            .upsert({
+                id: subjectId,
+                board_id: boardId,
+                name: data.custom_subject_name,
+                icon: 'BookOpen'
+            })
+            .select()
+            .single();
+
+        if (sError) {
+            console.error("[Register] Error upserting subject:", sError);
+            throw new Error(`Subject error: ${sError.message}`);
+        }
+
+        if (newSubject) {
+            finalSubjectId = newSubject.id;
+
+            // Create a default Module for the new subject
+            const { error: mError } = await supabase.from('kb_modules').upsert({
+                id: `${subjectId}-default`,
+                subject_id: subjectId,
+                name: 'Main Curriculum'
+            });
+
+            if (mError) {
+                console.error("[Register] Error creating default module:", mError);
+                // Continue anyway as module is secondary for student creation
+            }
+        }
+    }
+
+    // 2. Create Student
+    return createStudent({
+        name: data.name,
+        subject_id: finalSubjectId,
+        parent_email: data.parent_email,
+        notes: data.notes,
+        tutor_id: user.id
+    });
 }
 
 export async function updateStudent(id: string, updates: Partial<StudentInsert>): Promise<boolean> {
@@ -186,4 +272,67 @@ export async function completeSession(id: string, transcript?: string): Promise<
         status: "completed",
         transcript,
     });
+}
+
+// ===================================
+// MASTERY & INSIGHT ACTIONS
+// ===================================
+
+export async function getStudentMastery(studentId: string) {
+    const supabase = await createServerSupabaseClient();
+
+    const { data, error } = await supabase
+        .from("student_mastery")
+        .select("topic_id, score, status")
+        .eq("student_id", studentId);
+
+    if (error) {
+        console.error("Error fetching student mastery:", error);
+        return [];
+    }
+
+    // Map database topic_id to the UI's topicId
+    return (data || []).map(m => ({
+        topicId: m.topic_id,
+        level: m.score
+    }));
+}
+
+export async function getTopicInsights(studentId: string, topicId: string) {
+    const supabase = await createServerSupabaseClient();
+
+    // Fetch the latest completed session that covers this topic
+    const { data, error } = await supabase
+        .from("session_topics")
+        .select(`
+            evidence,
+            future_impact,
+            status_after,
+            sessions!inner(
+                notes,
+                transcript,
+                scheduled_at
+            )
+        `)
+        .eq("sessions.student_id", studentId)
+        .eq("topic_id", topicId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+    if (error) {
+        console.error("Error fetching topic insights:", error);
+        return null;
+    }
+
+    return {
+        text: data.sessions?.notes || "No recent AI narrative available for this topic.",
+        nextSteps: [
+            "Review session evidence below",
+            "Focus on identified struggle points",
+            "Next scheduled session follow-up"
+        ],
+        evidence: data.evidence ? [data.evidence] : [],
+        futureImpact: data.future_impact
+    };
 }

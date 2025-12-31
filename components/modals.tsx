@@ -9,18 +9,22 @@ import { AP_SUBJECTS } from "@/lib/knowledge-graph";
 
 interface AddStudentModalProps {
     isOpen: boolean;
+    subjects: { id: string; name: string }[];
     onClose: () => void;
     onSubmit: (data: {
         name: string;
         subject_id: string;
+        custom_subject_name?: string;
         parent_email?: string;
         notes?: string;
     }) => void;
 }
 
-export function AddStudentModal({ isOpen, onClose, onSubmit }: AddStudentModalProps) {
+export function AddStudentModal({ isOpen, subjects, onClose, onSubmit }: AddStudentModalProps) {
     const [name, setName] = useState("");
-    const [subjectId, setSubjectId] = useState(AP_SUBJECTS[0]?.id || "");
+    const [subjectId, setSubjectId] = useState(subjects[0]?.id || "");
+    const [isCustomSubject, setIsCustomSubject] = useState(false);
+    const [customSubjectName, setCustomSubjectName] = useState("");
     const [parentEmail, setParentEmail] = useState("");
     const [notes, setNotes] = useState("");
     const [loading, setLoading] = useState(false);
@@ -30,21 +34,35 @@ export function AddStudentModal({ isOpen, onClose, onSubmit }: AddStudentModalPr
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!name.trim()) return;
+        if (isCustomSubject && !customSubjectName.trim()) return;
 
         setLoading(true);
         try {
-            await onSubmit({
+            const res: any = await onSubmit({
                 name: name.trim(),
-                subject_id: subjectId,
+                subject_id: isCustomSubject ? "custom" : subjectId,
+                custom_subject_name: isCustomSubject ? customSubjectName.trim() : undefined,
                 parent_email: parentEmail.trim() || undefined,
                 notes: notes.trim() || undefined,
             });
+
+            // Handle server action result if provided
+            if (res && res.error) {
+                alert(res.error);
+                return;
+            }
+
             // Reset form
             setName("");
-            setSubjectId(AP_SUBJECTS[0]?.id || "");
+            setSubjectId(subjects[0]?.id || "");
+            setIsCustomSubject(false);
+            setCustomSubjectName("");
             setParentEmail("");
             setNotes("");
             onClose();
+        } catch (err: any) {
+            console.error("Submission error:", err);
+            alert(err.message || "Failed to add student. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -59,86 +77,123 @@ export function AddStudentModal({ isOpen, onClose, onSubmit }: AddStudentModalPr
             />
 
             {/* Modal */}
-            <div className="relative bg-[#18181b] border border-[#27272a] rounded-2xl w-full max-w-md p-6 shadow-xl">
-                <h2 className="text-xl font-semibold mb-6">Add New Student</h2>
+            <div className="relative bg-[#18181b] border border-[#27272a] rounded-2xl w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-black text-white tracking-tight">Add Student</h2>
+                    <button onClick={onClose} className="text-white/20 hover:text-white transition-colors">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Name */}
-                    <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-1.5">
-                            Student Name *
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-[#10b981] uppercase tracking-[0.2em] ml-1">
+                            Student Identity
                         </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g., Alex Kim"
-                            className="w-full px-4 py-2.5 bg-[#0f0f12] border border-[#27272a] rounded-lg text-white placeholder:text-[#52525b] focus:border-[#10b981] focus:outline-none transition"
+                            placeholder="Alex Kim"
+                            className="w-full px-5 py-4 bg-white/5 border border-white/5 rounded-2xl text-white placeholder:text-white/20 focus:border-[#10b981]/50 focus:bg-white/10 focus:outline-none transition-all"
                             required
                         />
                     </div>
 
-                    {/* Subject */}
-                    <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-1.5">
-                            Subject *
-                        </label>
-                        <select
-                            value={subjectId}
-                            onChange={(e) => setSubjectId(e.target.value)}
-                            className="w-full px-4 py-2.5 bg-[#0f0f12] border border-[#27272a] rounded-lg text-white focus:border-[#10b981] focus:outline-none transition"
-                        >
-                            {AP_SUBJECTS.map((subject) => (
-                                <option key={subject.id} value={subject.id}>
-                                    {subject.name}
-                                </option>
-                            ))}
-                        </select>
+                    {/* Subject Selection */}
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center ml-1">
+                            <label className="text-[10px] font-black text-[#10b981] uppercase tracking-[0.2em]">
+                                Curriculum Board
+                            </label>
+                            <button
+                                type="button"
+                                onClick={() => setIsCustomSubject(!isCustomSubject)}
+                                className={`text-[10px] font-black tracking-widest uppercase transition-all flex items-center gap-1.5 ${isCustomSubject ? "text-[#10b981]" : "text-white/40 hover:text-white"
+                                    }`}
+                            >
+                                {isCustomSubject && (
+                                    <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-pulse" />
+                                )}
+                                {isCustomSubject ? "← Use Template" : "+ New Subject"}
+                            </button>
+                        </div>
+
+                        <div className="relative">
+                            {isCustomSubject ? (
+                                <div key="custom-input" className="animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <input
+                                        type="text"
+                                        value={customSubjectName}
+                                        onChange={(e) => setCustomSubjectName(e.target.value)}
+                                        placeholder="e.g. IB Physics HL, SAT Math 2025"
+                                        className="w-full px-5 py-4 bg-[#10b981]/5 border border-[#10b981]/20 rounded-2xl text-white placeholder:text-[#10b981]/20 focus:border-[#10b981]/50 focus:outline-none transition-all shadow-[0_0_20px_rgba(16,185,129,0.05)]"
+                                        autoFocus
+                                        required
+                                    />
+                                    <p className="text-[10px] text-[#10b981]/60 font-medium italic mt-2 ml-1">
+                                        AI will build the knowledge graph based on your first sessions.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div key="select-input" className="relative group animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <select
+                                        value={subjectId}
+                                        onChange={(e) => setSubjectId(e.target.value)}
+                                        className="w-full px-5 py-4 bg-white/5 border border-white/5 rounded-2xl text-white focus:border-[#10b981]/50 focus:bg-white/10 focus:outline-none transition-all appearance-none cursor-pointer"
+                                        required
+                                    >
+                                        {subjects.length > 0 ? (
+                                            subjects.map((subject) => (
+                                                <option key={subject.id} value={subject.id} className="bg-[#18181b]">
+                                                    {subject.name}
+                                                </option>
+                                            ))
+                                        ) : (
+                                            <option value="" disabled>No subjects available</option>
+                                        )}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover:text-white/40 transition-colors">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Parent Email */}
-                    <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-1.5">
-                            Parent Email (optional)
+                    {/* Parent Intel */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-[#10b981] uppercase tracking-[0.2em] ml-1">
+                            Communication (Optional)
                         </label>
                         <input
                             type="email"
                             value={parentEmail}
                             onChange={(e) => setParentEmail(e.target.value)}
                             placeholder="parent@email.com"
-                            className="w-full px-4 py-2.5 bg-[#0f0f12] border border-[#27272a] rounded-lg text-white placeholder:text-[#52525b] focus:border-[#10b981] focus:outline-none transition"
+                            className="w-full px-5 py-4 bg-white/5 border border-white/5 rounded-2xl text-white placeholder:text-white/20 focus:border-[#10b981]/50 focus:bg-white/10 focus:outline-none transition-all"
                         />
                     </div>
 
-                    {/* Notes */}
-                    <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-1.5">
-                            Notes (optional)
-                        </label>
-                        <textarea
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            placeholder="Any additional notes..."
-                            rows={3}
-                            className="w-full px-4 py-2.5 bg-[#0f0f12] border border-[#27272a] rounded-lg text-white placeholder:text-[#52525b] focus:border-[#10b981] focus:outline-none transition resize-none"
-                        />
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex gap-4 pt-4">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2.5 bg-[#27272a] text-white rounded-lg font-medium hover:bg-[#3f3f46] transition"
+                            className="flex-1 px-6 py-4 bg-white/5 text-white/60 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-white/10 hover:text-white transition-all border border-white/5"
                         >
-                            Cancel
+                            Back
                         </button>
                         <button
                             type="submit"
                             disabled={loading || !name.trim()}
-                            className="flex-1 px-4 py-2.5 bg-[#10b981] text-black rounded-lg font-medium hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-6 py-4 bg-[#10b981] text-[#050510] rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-50 transition-all shadow-[0_8px_24px_rgba(16,185,129,0.2)]"
                         >
-                            {loading ? "Adding..." : "Add Student"}
+                            {loading ? "Initializing..." : "Register Student"}
                         </button>
                     </div>
                 </form>
