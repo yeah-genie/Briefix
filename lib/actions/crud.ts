@@ -84,9 +84,34 @@ export async function registerStudentWithSubject(data: {
 }) {
     const supabase = await createServerSupabaseClient();
 
-    // Auth check first
+    // Try to get authenticated user
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: "Authentication required" };
+
+    let tutorId = user?.id;
+
+    // FALLBACK: If not authenticated, try to find an existing tutor_id from the database
+    // This is a temporary measure as requested by the user ("인증 잠시 풀어봐").
+    if (!tutorId) {
+        console.warn("[Register] No authenticated user found. Attempting fallback tutor_id.");
+        const { data: existingStudents } = await supabase
+            .from("students")
+            .select("tutor_id")
+            .limit(1);
+
+        if (existingStudents && existingStudents.length > 0) {
+            tutorId = existingStudents[0].tutor_id;
+            console.log(`[Register] Using fallback tutor_id from existing student: ${tutorId}`);
+        } else {
+            // Last resort: If no students exist, we might need a default UUID
+            // This will likely fail if the UUID doesn't exist in the auth.users table
+            // but it's better than blocking the user entirely.
+            // Using a common placeholder UUID or returning error if nothing works.
+            return {
+                success: false,
+                error: "Authentication required and no existing tutor found to fallback to. Please log in once."
+            };
+        }
+    }
 
     let finalSubjectId = data.subject_id;
 
@@ -143,7 +168,7 @@ export async function registerStudentWithSubject(data: {
         subject_id: finalSubjectId,
         parent_email: data.parent_email,
         notes: data.notes,
-        tutor_id: user.id
+        tutor_id: tutorId!
     });
 }
 
