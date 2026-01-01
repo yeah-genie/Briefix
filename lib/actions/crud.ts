@@ -9,19 +9,24 @@ import type { Student, StudentInsert, Session, SessionInsert } from "@/lib/types
 // ===================================
 
 export async function getStudents(): Promise<Student[]> {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .order("created_at", { ascending: false });
+        const { data, error } = await supabase
+            .from("students")
+            .select("*")
+            .order("created_at", { ascending: false });
 
-    if (error) {
-        console.error("Error fetching students:", error);
+        if (error) {
+            console.error("Error fetching students (DB):", error);
+            return [];
+        }
+
+        return data || [];
+    } catch (e) {
+        console.error("Error fetching students (System):", e);
         return [];
     }
-
-    return data || [];
 }
 
 export async function getSubjects() {
@@ -82,44 +87,49 @@ export async function registerStudentWithSubject(data: {
     parent_email?: string;
     notes?: string;
 }) {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    // Try to get authenticated user (optional)
-    const { data: { user } } = await supabase.auth.getUser();
-    const tutorId = user?.id || null;
+        // Try to get authenticated user (optional)
+        const { data: { user } } = await supabase.auth.getUser();
+        const tutorId = user?.id || null;
 
-    console.log(`[Register] Creating student. Tutor ID: ${tutorId || 'null (anonymous)'}`);
+        console.log(`[Register] Creating student. Tutor ID: ${tutorId || 'null (anonymous)'}`);
 
-    let finalSubjectId = data.subject_id;
+        let finalSubjectId = data.subject_id;
 
-    // 1. Handle Custom Subject (skip if errors)
-    if (data.subject_id === 'custom' && data.custom_subject_name) {
-        console.log(`[Register] Custom subject requested: ${data.custom_subject_name}`);
-        finalSubjectId = data.custom_subject_name; // Use the name directly
+        // 1. Handle Custom Subject (skip if errors)
+        if (data.subject_id === 'custom' && data.custom_subject_name) {
+            console.log(`[Register] Custom subject requested: ${data.custom_subject_name}`);
+            finalSubjectId = data.custom_subject_name; // Use the name directly
+        }
+
+        // 2. Create Student - tutor_id is nullable per schema
+        const { data: studentData, error: studentError } = await supabase
+            .from("students")
+            .insert({
+                name: data.name,
+                subject: finalSubjectId,
+                parent_email: data.parent_email || null,
+                notes: data.notes || null,
+                tutor_id: tutorId
+            })
+            .select()
+            .single();
+
+        if (studentError) {
+            console.error("[Register] Error creating student (DB):", studentError);
+            return { success: false, error: `Student creation failed: ${studentError.message}` };
+        }
+
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/students");
+
+        return { success: true, data: studentData };
+    } catch (e: any) {
+        console.error("[Register] Error creating student (System):", e);
+        return { success: false, error: `Critical system error: ${e.message || 'Unknown error'}` };
     }
-
-    // 2. Create Student - tutor_id is nullable per schema
-    const { data: studentData, error: studentError } = await supabase
-        .from("students")
-        .insert({
-            name: data.name,
-            subject: finalSubjectId,
-            parent_email: data.parent_email || null,
-            notes: data.notes || null,
-            tutor_id: tutorId
-        })
-        .select()
-        .single();
-
-    if (studentError) {
-        console.error("[Register] Error creating student:", studentError);
-        return { success: false, error: `Student creation failed: ${studentError.message}` };
-    }
-
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/students");
-
-    return { success: true, data: studentData };
 }
 
 
@@ -167,25 +177,30 @@ export async function deleteStudent(id: string): Promise<boolean> {
 // ===================================
 
 export async function getSessions(studentId?: string): Promise<Session[]> {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    let query = supabase
-        .from("sessions")
-        .select("*")
-        .order("scheduled_at", { ascending: false });
+        let query = supabase
+            .from("sessions")
+            .select("*")
+            .order("scheduled_at", { ascending: false });
 
-    if (studentId) {
-        query = query.eq("student_id", studentId);
-    }
+        if (studentId) {
+            query = query.eq("student_id", studentId);
+        }
 
-    const { data, error } = await query;
+        const { data, error } = await query;
 
-    if (error) {
-        console.error("Error fetching sessions:", error);
+        if (error) {
+            console.error("Error fetching sessions (DB):", error);
+            return [];
+        }
+
+        return data || [];
+    } catch (e) {
+        console.error("Error fetching sessions (System):", e);
         return [];
     }
-
-    return data || [];
 }
 
 export async function getSession(id: string): Promise<Session | null> {

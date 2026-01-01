@@ -28,15 +28,14 @@ function getScoreTextColor(score: number): string {
 }
 
 export default async function Dashboard() {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    // Redirect to login if not authenticated (Temporarily disabled for user access)
-    /*
-    if (!user) {
-        redirect("/login"); 
+    let user = null;
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    } catch (e) {
+        console.error("[Dashboard] Error fetching user:", e);
     }
-    */
 
     // Fetch data
     const students = await getStudents();

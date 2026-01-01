@@ -7,19 +7,24 @@ import { cookies } from "next/headers";
 // For Server Components & Route Handlers
 // ===================================
 
-// Valid placeholder values for build time
 const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
 const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjMxNjgwMDAsImV4cCI6MTk1MDQxNjAwMH0.placeholder';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
 
 export async function createServerSupabaseClient() {
     const cookieStore = await cookies();
 
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error("[Supabase Server] Missing env vars: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+        }
+    }
+
     return createServerClient(
-        supabaseUrl,
-        supabaseAnonKey,
+        url || PLACEHOLDER_URL,
+        key || PLACEHOLDER_KEY,
         {
             cookies: {
                 getAll() {
@@ -45,14 +50,16 @@ export async function createServerSupabaseClient() {
 // ===================================
 
 export function createAdminSupabaseClient() {
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!serviceKey) {
-        console.warn("[Admin Client] SUPABASE_SERVICE_ROLE_KEY not set, using anon key");
-        return createClient(supabaseUrl, supabaseAnonKey);
+        console.warn("[Admin Client] SUPABASE_SERVICE_ROLE_KEY not set, falling back to anon key (RLS active)");
+        const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
+        return createClient(url, anonKey);
     }
 
-    return createClient(supabaseUrl, serviceKey, {
+    return createClient(url, serviceKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false
