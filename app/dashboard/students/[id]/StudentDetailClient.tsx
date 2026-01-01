@@ -14,59 +14,24 @@ import {
     Calendar,
     ArrowRight,
     Share2,
-    ChevronRight,
-    Search,
+    TrendingUp,
     Brain
 } from 'lucide-react';
 import TopicInsightPanel from '@/components/analysis/TopicInsightPanel';
-
-interface PredictionData {
-    predictions: any[];
-    weaknesses: any[];
-    progress: {
-        currentMastery: number;
-        targetMastery: number;
-        targetDate: string;
-        predictedCompletionDate: string;
-        sessionsNeeded: number;
-        onTrack: boolean;
-        recommendation: string;
-    } | null;
-    nextSession: {
-        focusTopics: string[];
-        suggestedDuration: number;
-        priority: string;
-        rationale: string;
-    } | null;
-}
+import { type PredictionData } from '@/lib/services/prediction';
 
 interface StudentDetailClientProps {
     student: Student;
     initialMastery: any[];
     subject: Subject;
     sessions: Session[];
-    predictionData?: PredictionData;
+    predictions: PredictionData;
 }
 
-export default function StudentDetailClient({ student, initialMastery, subject, sessions, predictionData }: StudentDetailClientProps) {
+export default function StudentDetailClient({ student, initialMastery, subject, sessions, predictions }: StudentDetailClientProps) {
     const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-    const [showPredictions, setShowPredictions] = useState(false);
-
-    // Parse serialized dates back to Date objects for PredictionPanel
-    const parsedPredictionData = predictionData ? {
-        predictions: predictionData.predictions.map(p => ({
-            ...p,
-            optimalReviewDate: new Date(p.optimalReviewDate),
-        })),
-        weaknesses: predictionData.weaknesses,
-        progress: predictionData.progress ? {
-            ...predictionData.progress,
-            targetDate: new Date(predictionData.progress.targetDate),
-            predictedCompletionDate: new Date(predictionData.progress.predictedCompletionDate),
-        } : null,
-        nextSession: predictionData.nextSession,
-    } : null;
+    const [activeTab, setActiveTab] = useState<'insights' | 'predictions'>('insights');
 
     // Placeholder insights (In real app, fetch from DB)
     const mockInsights = {
@@ -187,88 +152,90 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
 
                     {/* Right Column: AI Insights & Predictions */}
                     <div className="col-span-4 space-y-6">
-                        {/* Tab Toggle */}
-                        <div className="flex gap-2 p-1 bg-white/5 rounded-xl">
+                        {/* Tab Switcher */}
+                        <div className="flex p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
                             <button
-                                onClick={() => setShowPredictions(false)}
-                                className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                                    !showPredictions ? 'bg-[#10b981] text-black' : 'text-white/60 hover:text-white'
-                                }`}
+                                onClick={() => setActiveTab('insights')}
+                                className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${activeTab === 'insights'
+                                    ? 'bg-[#10b981] text-black shadow-lg shadow-[#10b981]/20'
+                                    : 'text-white/40 hover:text-white/60'
+                                    }`}
                             >
-                                <Zap size={14} />
-                                AI Insights
+                                <span className="flex items-center justify-center gap-2">
+                                    <Zap size={14} />
+                                    AI Insights
+                                </span>
                             </button>
                             <button
-                                onClick={() => setShowPredictions(true)}
-                                className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                                    showPredictions ? 'bg-[#10b981] text-black' : 'text-white/60 hover:text-white'
-                                }`}
+                                onClick={() => setActiveTab('predictions')}
+                                className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all ${activeTab === 'predictions'
+                                    ? 'bg-[#10b981] text-black shadow-lg shadow-[#10b981]/20'
+                                    : 'text-white/40 hover:text-white/60'
+                                    }`}
                             >
-                                <Brain size={14} />
-                                Predictions
+                                <span className="flex items-center justify-center gap-2">
+                                    <TrendingUp size={14} />
+                                    Predictions
+                                </span>
                             </button>
                         </div>
 
-                        {/* Prediction Panel */}
-                        {showPredictions && parsedPredictionData ? (
-                            <PredictionPanel
-                                predictions={parsedPredictionData.predictions}
-                                weaknesses={parsedPredictionData.weaknesses}
-                                progress={parsedPredictionData.progress}
-                                nextSession={parsedPredictionData.nextSession}
-                            />
-                        ) : (
-                            /* AI Tipping (Original) */
-                            <section className="bg-gradient-to-br from-[#10b981]/10 to-transparent border border-[#10b981]/20 rounded-3xl p-8 space-y-6">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-black">
-                                        <Zap size={18} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-bold uppercase tracking-widest text-[#10b981]">AI Tipping</h3>
-                                        <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none mt-1">Next Session Co-pilot</p>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {mockInsights.nextSteps.map((step, i) => (
-                                        <div key={i} className="flex gap-3">
-                                            <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#10b981]/50" />
-                                            <p className="text-sm text-white/70 leading-relaxed font-medium">{step}</p>
+                        {activeTab === 'insights' ? (
+                            <>
+                                {/* AI Tipping */}
+                                <section className="bg-gradient-to-br from-[#10b981]/10 to-transparent border border-[#10b981]/20 rounded-3xl p-8 space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-[#10b981] flex items-center justify-center text-black">
+                                            <Zap size={18} />
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div className="pt-4 border-t border-white/10">
-                                    <div className="flex items-center gap-2 text-amber-500 mb-2">
-                                        <Target size={14} />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">Growth Forecast</span>
+                                        <div>
+                                            <h3 className="text-sm font-bold uppercase tracking-widest text-[#10b981]">AI Tipping</h3>
+                                            <p className="text-[10px] text-white/40 font-bold uppercase tracking-widest leading-none mt-1">Next Session Co-pilot</p>
+                                        </div>
                                     </div>
-                                    <p className="text-xs text-white/50 italic leading-relaxed">
-                                        "{mockInsights.futureImpact}"
-                                    </p>
-                                </div>
-                            </section>
+
+                                    <div className="space-y-4">
+                                        {mockInsights.nextSteps.map((step, i) => (
+                                            <div key={i} className="flex gap-3">
+                                                <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#10b981]/50" />
+                                                <p className="text-sm text-white/70 leading-relaxed font-medium">{step}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-4 border-t border-white/10">
+                                        <div className="flex items-center gap-2 text-amber-500 mb-2">
+                                            <Target size={14} />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Growth Forecast</span>
+                                        </div>
+                                        <p className="text-xs text-white/50 italic leading-relaxed">
+                                            "{mockInsights.futureImpact}"
+                                        </p>
+                                    </div>
+                                </section>
+
+                                {/* Parent Summary Card */}
+                                <section className="bg-white/[0.03] border border-white/5 rounded-3xl p-8 space-y-6">
+                                    <h3 className="text-sm font-bold uppercase tracking-widest text-white/60 flex items-center gap-2">
+                                        <MessageSquare size={16} />
+                                        Parental Summary
+                                    </h3>
+                                    <div className="bg-[#09090b] rounded-2xl p-5 border border-white/5">
+                                        <p className="text-sm text-white/80 italic leading-relaxed font-serif">
+                                            "{mockInsights.text}"
+                                        </p>
+                                    </div>
+                                    <button className="w-full group flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-[#71717a] hover:text-white transition-all">
+                                        <span>Preview Generated Report</span>
+                                        <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                                    </button>
+                                </section>
+                            </>
+                        ) : (
+                            <PredictionPanel data={predictions} />
                         )}
 
-                        {/* Parent Summary Card */}
-                        <section className="bg-white/[0.03] border border-white/5 rounded-3xl p-8 space-y-6">
-                            <h3 className="text-sm font-bold uppercase tracking-widest text-white/60 flex items-center gap-2">
-                                <MessageSquare size={16} />
-                                Parental Summary
-                            </h3>
-                            <div className="bg-[#09090b] rounded-2xl p-5 border border-white/5">
-                                <p className="text-sm text-white/80 italic leading-relaxed font-serif">
-                                    "{mockInsights.text}"
-                                </p>
-                            </div>
-                            <button className="w-full group flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-[#71717a] hover:text-white transition-all">
-                                <span>Preview Generated Report</span>
-                                <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                            </button>
-                        </section>
-
-                        {/* Quick Navigation / Stats */}
+                        {/* Quick Stats */}
                         <section className="grid grid-cols-2 gap-4">
                             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
                                 <p className="text-[10px] font-bold text-[#71717a] uppercase mb-1">Total Lessons</p>
@@ -276,7 +243,11 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                             </div>
                             <div className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl text-center">
                                 <p className="text-[10px] font-bold text-[#71717a] uppercase mb-1">Avg Score</p>
-                                <p className="text-2xl font-black text-[#10b981]">0%</p>
+                                <p className="text-2xl font-black text-[#10b981]">
+                                    {initialMastery.length > 0
+                                        ? Math.round(initialMastery.reduce((acc, m) => acc + m.score, 0) / initialMastery.length)
+                                        : 0}%
+                                </p>
                             </div>
                         </section>
                     </div>

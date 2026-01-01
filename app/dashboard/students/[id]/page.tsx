@@ -16,6 +16,7 @@ import {
 import { fetchSubjectData } from "@/lib/knowledge-graph-server";
 import StudentDetailClient from './StudentDetailClient';
 import Sidebar from '@/components/layout/Sidebar';
+import { getStudentPredictions } from '@/lib/services/prediction';
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -51,13 +52,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
     const sessions = await getSessions();
     const studentSessions = sessions.filter(s => s.student_id === id);
 
-    // 3. Fetch Prediction Data
-    const [predictions, weaknesses, progress, nextSession] = await Promise.all([
-        getTopicPredictions(id),
-        analyzeWeaknesses(id),
-        predictProgress(id),
-        getNextSessionRecommendations(id),
-    ]);
+    // 3. Fetch Prediction Data via unified service
+    const predictions = await getStudentPredictions(id, student.subject_id);
 
     if (!subject) {
         return (
@@ -94,7 +90,7 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
             initialMastery={initialMastery}
             subject={subject}
             sessions={studentSessions}
-            predictionData={predictionData}
+            predictions={predictions}
         />
     );
 }
