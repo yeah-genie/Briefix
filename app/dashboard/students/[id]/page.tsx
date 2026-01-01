@@ -1,4 +1,6 @@
 import React from 'react';
+import { redirect } from 'next/navigation';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { getStudents, getStudentMastery, getSessions } from '@/lib/actions/crud';
 import { fetchSubjectData } from "@/lib/knowledge-graph-server";
 import StudentDetailClient from './StudentDetailClient';
