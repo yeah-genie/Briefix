@@ -4,8 +4,8 @@ import { fetchSubjectData } from "@/lib/knowledge-graph-server";
 import StudentDetailClient from './StudentDetailClient';
 import Sidebar from '@/components/layout/Sidebar';
 
-export default async function StudentDetailPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default async function StudentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
 
     const supabase = await createServerSupabaseClient();
     const { data: { user } } = await supabase.auth.getUser();
