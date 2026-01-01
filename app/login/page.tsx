@@ -1,24 +1,36 @@
 "use client";
 
-import { useState } from "react";
-import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export default function LoginPage() {
     const [email, setEmail] = useState("");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+    const [isClient, setIsClient] = useState(false);
+    const supabaseRef = useRef<SupabaseClient | null>(null);
 
-    const supabase = createBrowserSupabaseClient();
+    // Initialize Supabase client only after component mounts (client-side only)
+    useEffect(() => {
+        const initSupabase = async () => {
+            const { createBrowserSupabaseClient } = await import("@/lib/supabase/client");
+            supabaseRef.current = createBrowserSupabaseClient();
+            setIsClient(true);
+        };
+        initSupabase();
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!supabaseRef.current) return;
+
         setLoading(true);
         setMessage(null);
 
         try {
-            const { error } = await supabase.auth.signInWithOtp({
+            const { error } = await supabaseRef.current.auth.signInWithOtp({
                 email,
                 options: {
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -32,6 +44,17 @@ export default function LoginPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGoogleLogin = async () => {
+        if (!supabaseRef.current) return;
+
+        await supabaseRef.current.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        });
     };
 
     return (
@@ -54,15 +77,9 @@ export default function LoginPage() {
                 <div className="bg-[#18181b] border border-[#27272a] p-8 rounded-2xl shadow-xl backdrop-blur-sm bg-opacity-80">
                     <div className="space-y-4">
                         <button
-                            onClick={async () => {
-                                await supabase.auth.signInWithOAuth({
-                                    provider: 'google',
-                                    options: {
-                                        redirectTo: `${window.location.origin}/auth/callback`,
-                                    },
-                                });
-                            }}
-                            className="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3"
+                            onClick={handleGoogleLogin}
+                            disabled={!isClient}
+                            className="w-full py-3 bg-white text-black font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                         >
                             <svg className="w-5 h-5" viewBox="0 0 24 24">
                                 <path

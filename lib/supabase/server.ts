@@ -7,11 +7,15 @@ import { cookies } from "next/headers";
 // For Server Components & Route Handlers
 // ===================================
 
+// Valid placeholder values for build time
+const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
+const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjMxNjgwMDAsImV4cCI6MTk1MDQxNjAwMH0.placeholder';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
+
 export async function createServerSupabaseClient() {
     const cookieStore = await cookies();
-
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
 
     return createServerClient(
         supabaseUrl,
@@ -41,16 +45,14 @@ export async function createServerSupabaseClient() {
 // ===================================
 
 export function createAdminSupabaseClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
-    if (!supabaseServiceKey) {
+    if (!serviceKey) {
         console.warn("[Admin Client] SUPABASE_SERVICE_ROLE_KEY not set, using anon key");
-        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-key';
         return createClient(supabaseUrl, supabaseAnonKey);
     }
 
-    return createClient(supabaseUrl, supabaseServiceKey, {
+    return createClient(supabaseUrl, serviceKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false

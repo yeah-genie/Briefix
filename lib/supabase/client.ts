@@ -4,23 +4,35 @@ import { createBrowserClient } from "@supabase/ssr";
 // SUPABASE CLIENT (Browser)
 // ===================================
 
-// Use a valid URL format for placeholder to avoid build errors
-const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
-const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2MjMxNjgwMDAsImV4cCI6MTk1MDQxNjAwMH0.placeholder';
+// Helper to get env vars at runtime (not build time)
+function getSupabaseConfig() {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
+    if (!url || !key) {
+        // Return null during build time or when env vars are missing
+        return null;
+    }
+
+    return { url, key };
+}
 
 // Demo mode when no credentials
-export const isDemoMode = !process.env.NEXT_PUBLIC_SUPABASE_URL || supabaseUrl === PLACEHOLDER_URL;
+export function isDemoMode(): boolean {
+    return typeof window === 'undefined' || !getSupabaseConfig();
+}
 
 // Main client creator for browser-side
 export function createBrowserSupabaseClient() {
-    if (isDemoMode && typeof window !== 'undefined') {
-        console.warn('[Supabase] Running in DEMO mode - data will not persist');
+    const config = getSupabaseConfig();
+
+    if (!config) {
+        // During SSR/build, return a mock that won't cause errors
+        // This should never be called during build with proper dynamic rendering
+        throw new Error('Supabase environment variables not configured. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
 
-    return createBrowserClient(supabaseUrl, supabaseAnonKey);
+    return createBrowserClient(config.url, config.key);
 }
 
 
