@@ -1,19 +1,31 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, Pause, Trash2, CheckCircle, Loader2, AlertCircle, Share2, ExternalLink } from 'lucide-react';
+import { Mic, Square, Play, Pause, Trash2, CheckCircle, Loader2, AlertCircle, Share2, ExternalLink, Camera, Image as ImageIcon, Plus, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { processSessionAudio } from '@/lib/actions/analysis';
 import Link from 'next/link';
 
+import type { Student } from '@/lib/types/database';
+
 interface VoiceRecorderProps {
-    studentId: string;
-    subjectId: string;
+    studentId?: string;
+    subjectId?: string;
+    students?: Student[];
     onRecordingComplete?: (blob: Blob) => void;
     className?: string;
 }
 
-export default function VoiceRecorder({ studentId, subjectId, onRecordingComplete, className }: VoiceRecorderProps) {
+export default function VoiceRecorder({
+    studentId: initialStudentId,
+    subjectId: initialSubjectId,
+    students = [],
+    onRecordingComplete,
+    className
+}: VoiceRecorderProps) {
+    const [selectedStudentId, setSelectedStudentId] = useState(initialStudentId || (students.length > 0 ? students[0].id : ''));
+    const [selectedSubjectId, setSelectedSubjectId] = useState(initialSubjectId || (students.length > 0 ? students[0].subject_id : ''));
+
     const [isRecording, setIsRecording] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -24,6 +36,9 @@ export default function VoiceRecorder({ studentId, subjectId, onRecordingComplet
     const [duration, setDuration] = useState(0);
     const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
+    const [images, setImages] = useState<File[]>([]);
+    const [imageUrls, setImageUrls] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -33,8 +48,31 @@ export default function VoiceRecorder({ studentId, subjectId, onRecordingComplet
     useEffect(() => {
         return () => {
             if (audioUrl) URL.revokeObjectURL(audioUrl);
+            imageUrls.forEach(url => URL.revokeObjectURL(url));
         };
-    }, [audioUrl]);
+    }, [audioUrl, imageUrls]);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        const newImages = [...images, ...files].slice(0, 3); // Max 3 images
+        const newUrls = newImages.map(file => URL.createObjectURL(file));
+
+        setImages(newImages);
+        setImageUrls(newUrls);
+    };
+
+    const removeImage = (index: number) => {
+        const newImages = [...images];
+        newImages.splice(index, 1);
+        setImages(newImages);
+
+        const newUrls = [...imageUrls];
+        URL.revokeObjectURL(newUrls[index]);
+        newUrls.splice(index, 1);
+        setImageUrls(newUrls);
+    };
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -134,8 +172,14 @@ export default function VoiceRecorder({ studentId, subjectId, onRecordingComplet
         try {
             const formData = new FormData();
             formData.append('audio', targetBlob, 'session.webm');
-            formData.append('studentId', studentId);
-            formData.append('subjectId', subjectId);
+            formData.append('studentId', selectedStudentId);
+            formData.append('subjectId', selectedSubjectId);
+
+            // Add multimodal images (P1.3)
+            images.forEach((img, i) => {
+                formData.append(`image_${i}`, img);
+            });
+            formData.append('imageCount', images.length.toString());
 
             const result = await processSessionAudio(formData);
 
@@ -157,16 +201,86 @@ export default function VoiceRecorder({ studentId, subjectId, onRecordingComplet
     return (
         <div className={cn("bg-[#18181b] border border-[#27272a] rounded-2xl p-6 transition-all", className)}>
             {!isRecording && !audioBlob ? (
-                <div className="flex flex-col items-center justify-center space-y-4 py-4">
-                    <button
-                        onClick={startRecording}
-                        className="w-16 h-16 bg-[#10b981] text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#10b98140]"
-                    >
-                        <Mic size={28} />
-                    </button>
-                    <div className="text-center">
-                        <p className="text-sm font-semibold text-white">Start Recording Session</p>
-                        <p className="text-xs text-[#71717a] mt-1">AI will automatically analyze the dialogue</p>
+                <div className="flex flex-col items-center justify-center space-y-6 py-4">
+                    {/* Student Selector */}
+                    {students.length > 0 && (
+                        <div className="w-full px-4 mb-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-[#71717a] mb-2 block">
+                                Recording For Student
+                            </label>
+                            <select
+                                value={selectedStudentId}
+                                onChange={(e) => {
+                                    const s = students.find(std => std.id === e.target.value);
+                                    if (s) {
+                                        setSelectedStudentId(s.id);
+                                        setSelectedSubjectId(s.subject_id);
+                                    }
+                                }}
+                                className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-[#10b981]/50 transition-colors cursor-pointer appearance-none"
+                            >
+                                {students.map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name} ({s.subject_id})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    <div className="w-full px-4 space-y-4">
+                        {/* Image Metadata Capture (P1.3) */}
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-[#71717a]">
+                                    Visual Evidence (Max 3)
+                                </label>
+                                <button
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="text-[10px] font-black uppercase tracking-widest text-[#10b981] hover:text-emerald-400 transition-colors flex items-center gap-1"
+                                >
+                                    <Plus className="w-3 h-3" />
+                                    Add Image
+                                </button>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageUpload}
+                                />
+                            </div>
+
+                            {imageUrls.length > 0 && (
+                                <div className="flex gap-2">
+                                    {imageUrls.map((url, i) => (
+                                        <div key={i} className="relative group w-14 h-14">
+                                            <img src={url} className="w-full h-full object-cover rounded-lg border border-white/10" />
+                                            <button
+                                                onClick={() => removeImage(i)}
+                                                className="absolute -top-1 -right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col items-center gap-4 py-2">
+                            <button
+                                onClick={startRecording}
+                                className="w-16 h-16 bg-[#10b981] text-black rounded-full flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#10b98140]"
+                            >
+                                <Mic size={28} />
+                            </button>
+                            <div className="text-center">
+                                <p className="text-sm font-semibold text-white">Start Recording Session</p>
+                                <p className="text-xs text-[#71717a] mt-1">Audio + Visual data for deep analysis</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             ) : isRecording ? (

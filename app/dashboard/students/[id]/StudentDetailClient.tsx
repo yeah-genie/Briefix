@@ -18,42 +18,63 @@ import {
     Brain
 } from 'lucide-react';
 import TopicInsightPanel from '@/components/analysis/TopicInsightPanel';
+import VoiceRecorder from '@/components/monitoring/VoiceRecorder';
+import LearningTrendChart from '@/components/insights/LearningTrendChart';
 import { type PredictionData } from '@/lib/services/prediction';
+import { generateParentReport } from '@/lib/actions/reports';
 
 interface StudentDetailClientProps {
     student: Student;
-    initialMastery: any[];
+    initialMastery: { topicId: string; score: number }[];
     subject: Subject;
     sessions: Session[];
     predictions: PredictionData;
+    latestNotes?: string | null;
+    masteryHistory: { date: string; score: number }[];
 }
 
-export default function StudentDetailClient({ student, initialMastery, subject, sessions, predictions }: StudentDetailClientProps) {
+export default function StudentDetailClient({
+    student,
+    initialMastery,
+    subject,
+    sessions,
+    predictions,
+    latestNotes,
+    masteryHistory
+}: StudentDetailClientProps) {
     const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
     const [activeTab, setActiveTab] = useState<'insights' | 'predictions'>('insights');
 
-    // Placeholder insights (In real app, fetch from DB)
-    const mockInsights = {
-        text: "The student shows a strong conceptual grasp of the Chain Rule but struggles when combined with trigonometric functions. Precision in algebraic manipulation is the current bottleneck.",
+    // Combine real notes with placeholders for missing fields
+    const studentInsights = {
+        text: latestNotes || "No student-wide AI summary available yet. Capture a session to generate insights.",
         nextSteps: [
-            "Review trigonometric identities before next differentiation session",
-            "Drill multi-step chain rule problems with mixed functions",
-            "Focus on formal notation to prevent sign errors"
+            "Focus on the recommended topics in the Predictions tab",
+            "Review recent session evidence below",
+            "Prepare for the next scheduled session"
         ],
-        evidence: [
-            "Student correctly identified the outer function in sin(3x² + 1)",
-            "Lapsed in applying the constant multiple rule during the second step",
-        ],
-        futureImpact: "Difficulty with Implicit Differentiation is expected if the Chain Rule is not fully mastered this week."
+        evidence: [],
+        futureImpact: " मास्टर(Mastery) level is being tracked based on historical performance."
     };
 
-    const handleGenerateReport = () => {
+    const handleGenerateReport = async () => {
         setIsGeneratingReport(true);
-        setTimeout(() => {
+        try {
+            const result = await generateParentReport(student.id);
+            if (result.success && result.report) {
+                // Copy to clipboard
+                await navigator.clipboard.writeText(result.report);
+                alert(`AI Parent Report Generated!\n\nThe summary has been copied to your clipboard. You can now paste it into an email or message to the parent.\n\nSummary Preview:\n${result.report.substring(0, 100)}...`);
+            } else {
+                alert(`Failed to generate report: ${result.error}`);
+            }
+        } catch (e) {
+            console.error("Report generation error:", e);
+            alert("An error occurred while generating the report.");
+        } finally {
             setIsGeneratingReport(false);
-            alert("Parent Summary Report has been generated and copied to clipboard!");
-        }, 1500);
+        }
     };
 
     return (
@@ -150,8 +171,27 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                         </section>
                     </div>
 
-                    {/* Right Column: AI Insights & Predictions */}
                     <div className="col-span-4 space-y-6">
+                        {/* Session Capture (P0 Integration) */}
+                        <div className="rounded-2xl bg-[#18181b] border border-white/5 overflow-hidden shadow-2xl">
+                            <div className="px-5 py-4 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                                <div>
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                        <Brain className="w-4 h-4 text-[#10b981]" />
+                                        Session Capture
+                                    </h3>
+                                    <p className="text-[10px] text-white/40 uppercase tracking-widest mt-0.5">Record to update mastery matrix</p>
+                                </div>
+                            </div>
+                            <div className="p-2">
+                                <VoiceRecorder
+                                    studentId={student.id}
+                                    subjectId={student.subject_id}
+                                    students={[student]}
+                                    className="border-none bg-transparent shadow-none"
+                                />
+                            </div>
+                        </div>
                         {/* Tab Switcher */}
                         <div className="flex p-1 bg-white/[0.03] border border-white/5 rounded-2xl">
                             <button
@@ -181,7 +221,10 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                         </div>
 
                         {activeTab === 'insights' ? (
-                            <>
+                            <div className="space-y-8">
+                                {/* Historical Learning Trend (Phase 4.1) */}
+                                <LearningTrendChart history={masteryHistory} />
+
                                 {/* AI Tipping */}
                                 <section className="bg-gradient-to-br from-[#10b981]/10 to-transparent border border-[#10b981]/20 rounded-3xl p-8 space-y-6">
                                     <div className="flex items-center gap-3">
@@ -195,7 +238,7 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                                     </div>
 
                                     <div className="space-y-4">
-                                        {mockInsights.nextSteps.map((step, i) => (
+                                        {studentInsights.nextSteps.map((step, i) => (
                                             <div key={i} className="flex gap-3">
                                                 <div className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[#10b981]/50" />
                                                 <p className="text-sm text-white/70 leading-relaxed font-medium">{step}</p>
@@ -209,7 +252,7 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                                             <span className="text-[10px] font-black uppercase tracking-widest">Growth Forecast</span>
                                         </div>
                                         <p className="text-xs text-white/50 italic leading-relaxed">
-                                            "{mockInsights.futureImpact}"
+                                            &quot;{studentInsights.futureImpact}&quot;
                                         </p>
                                     </div>
                                 </section>
@@ -222,7 +265,7 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                                     </h3>
                                     <div className="bg-[#09090b] rounded-2xl p-5 border border-white/5">
                                         <p className="text-sm text-white/80 italic leading-relaxed font-serif">
-                                            "{mockInsights.text}"
+                                            &quot;{studentInsights.text}&quot;
                                         </p>
                                     </div>
                                     <button className="w-full group flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-[#71717a] hover:text-white transition-all">
@@ -230,7 +273,7 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
                                         <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                                     </button>
                                 </section>
-                            </>
+                            </div>
                         ) : (
                             <PredictionPanel data={predictions} />
                         )}
@@ -258,8 +301,8 @@ export default function StudentDetailClient({ student, initialMastery, subject, 
             <TopicInsightPanel
                 topic={selectedTopic}
                 onClose={() => setSelectedTopic(null)}
-                masteryLevel={initialMastery.find(m => m.topicId === selectedTopic?.id)?.level || 0}
-                insights={mockInsights}
+                masteryLevel={initialMastery.find(m => m.topicId === selectedTopic?.id)?.score || 0}
+                insights={studentInsights}
             />
 
             <style jsx>{`

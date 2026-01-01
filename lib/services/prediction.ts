@@ -52,7 +52,7 @@ export interface PredictionData {
     retentionAlerts: Array<{
         topicId: string;
         topicName: string;
-        status: 'critical' | 'warning' | 'stable' | 'strong';
+        urgency: 'critical' | 'warning' | 'stable' | 'strong';
         predictedScore: number;
     }>;
     progressForecast: {
@@ -83,11 +83,11 @@ function calculateRetention(
     return Math.max(0, Math.min(1, adjustedRetention));
 }
 
-export function predictScoreAfterDays(
+export async function predictScoreAfterDays(
     currentScore: number,
     days: number,
     personalDecayRate: number = 0.15
-): number {
+): Promise<number> {
     const retention = calculateRetention(currentScore, days, personalDecayRate);
     return Math.round(currentScore * retention);
 }
@@ -109,25 +109,25 @@ export async function getStudentPredictions(studentId: string, subjectId: string
     const alerts: PredictionData['retentionAlerts'] = [];
     const weakPatterns: PredictionData['weaknessPatterns'] = [];
 
-    (masteryData || []).forEach(m => {
+    for (const m of (masteryData || [])) {
         const lastReview = new Date(m.updated_at);
         const daysPassed = Math.floor((now.getTime() - lastReview.getTime()) / (1000 * 60 * 60 * 24));
 
         const decayRate = m.score >= 80 ? 0.08 : m.score >= 60 ? 0.12 : 0.20;
-        const predictedScore = predictScoreAfterDays(m.score, 7, decayRate);
+        const predictedScore = await predictScoreAfterDays(m.score, 7, decayRate);
 
         if (predictedScore < 50 && m.score >= 70) {
             alerts.push({
                 topicId: m.topic_id,
-                topicName: (m.kb_topics as any)?.name || m.topic_id,
-                status: 'critical',
+                topicName: (m.kb_topics as unknown as { name: string })?.name || m.topic_id,
+                urgency: 'critical',
                 predictedScore
             });
         } else if (predictedScore < 70 && m.score >= 80) {
             alerts.push({
                 topicId: m.topic_id,
-                topicName: (m.kb_topics as any)?.name || m.topic_id,
-                status: 'warning',
+                topicName: (m.kb_topics as unknown as { name: string })?.name || m.topic_id,
+                urgency: 'warning',
                 predictedScore
             });
         }
@@ -135,11 +135,11 @@ export async function getStudentPredictions(studentId: string, subjectId: string
         if (m.score < 40 && daysPassed > 14) {
             weakPatterns.push({
                 pattern: 'stuck',
-                topicName: (m.kb_topics as any)?.name || m.topic_id,
+                topicName: (m.kb_topics as unknown as { name: string })?.name || m.topic_id,
                 details: 'Static mastery score for over 2 weeks. Suggested alternative approach needed.'
             });
         }
-    });
+    }
 
     const avgMastery = masteryData && masteryData.length > 0
         ? Math.round(masteryData.reduce((acc, curr) => acc + curr.score, 0) / masteryData.length)

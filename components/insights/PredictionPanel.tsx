@@ -8,7 +8,9 @@ import {
     Target,
     Clock,
     ShieldAlert,
-    Brain
+    Brain,
+    ArrowRight,
+    Check
 } from 'lucide-react';
 import { type PredictionData } from '@/lib/services/prediction';
 
@@ -37,6 +39,30 @@ export default function PredictionPanel({ data }: PredictionPanelProps) {
                     <p className="text-xs text-white/60 leading-relaxed italic">
                         "{data.nextSessionRecommendation.reason}"
                     </p>
+                </div>
+            </div>
+
+            {/* 1.1 Adaptive Learning Path (Phase 4.2) */}
+            <div className="p-6 bg-white/[0.03] border border-white/5 rounded-2xl">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#71717a] mb-6 flex items-center gap-2">
+                    <ArrowRight size={14} />
+                    Adaptive Learning Road-map
+                </h4>
+                <div className="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+                    <div className="relative">
+                        <div className="absolute -left-6 top-1 w-6 h-6 rounded-full bg-[#10b981] flex items-center justify-center text-black z-10">
+                            <Check size={12} strokeWidth={3} />
+                        </div>
+                        <p className="text-xs font-bold text-white/90">{data.nextSessionRecommendation.topicName}</p>
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Current Focus</p>
+                    </div>
+                    <div className="relative opacity-50">
+                        <div className="absolute -left-6 top-1 w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/40 z-10 border border-white/5">
+                            <span className="text-[10px] font-black">2</span>
+                        </div>
+                        <p className="text-xs font-bold text-white/90">Advanced Application & Synthesis</p>
+                        <p className="text-[10px] text-white/40 uppercase tracking-widest font-bold mt-1">Locked (Pending Mastery)</p>
+                    </div>
                 </div>
             </div>
 
@@ -80,7 +106,52 @@ export default function PredictionPanel({ data }: PredictionPanelProps) {
                 </div>
             </div>
 
-            {/* 3. Retention Alerts (Forgetting Curve) */}
+            {/* 3. Adaptive Learning Roadmap (Phase 4.2) */}
+            <div className="p-6 bg-white/[0.03] border border-white/5 rounded-2xl">
+                <h4 className="text-[10px] font-black uppercase tracking-widest text-[#71717a] mb-6 flex items-center gap-2">
+                    <ArrowRight size={14} />
+                    Adaptive Roadmap
+                </h4>
+                <div className="relative space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+                    {/* Stage 1: Current Focus */}
+                    <div className="relative pl-8">
+                        <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-[#10b981] flex items-center justify-center text-black z-10 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                            <Check size={12} strokeWidth={3} />
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-white/90">{data.nextSessionRecommendation.topicName}</p>
+                            <p className="text-[10px] text-[#10b981] font-black uppercase tracking-widest">Active Focus</p>
+                            <p className="text-[10px] text-white/40 leading-relaxed italic mt-2">
+                                &quot;{data.nextSessionRecommendation.reason.substring(0, 100)}...&quot;
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* Stage 2: Complexity Increment */}
+                    <div className="relative pl-8 opacity-40 grayscale-[0.5]">
+                        <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/40 z-10">
+                            <span className="text-[10px] font-black">2</span>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-white/90">Multivariable Integration & Solids</p>
+                            <p className="text-[10px] text-white/30 font-bold uppercase tracking-widest">Upcoming Milestone</p>
+                        </div>
+                    </div>
+
+                    {/* Stage 3: Project Synergy */}
+                    <div className="relative pl-8 opacity-20 grayscale">
+                        <div className="absolute left-0 top-0 w-6 h-6 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white/20 z-10">
+                            <span className="text-[10px] font-black">3</span>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-white/90">Real-world Kinematics Project</p>
+                            <p className="text-[10px] text-white/20 font-bold uppercase tracking-widest">Synthesis Goal</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 4. Retention Alerts (Forgetting Curve) */}
             <div className="p-6 bg-white/[0.03] border border-white/5 rounded-2xl">
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-[#71717a] mb-4 flex items-center gap-2">
                     <Brain size={14} />
@@ -90,7 +161,7 @@ export default function PredictionPanel({ data }: PredictionPanelProps) {
                     {data.retentionAlerts.map((alert, i) => (
                         <div key={i} className="flex items-center justify-between p-3 bg-black/20 rounded-xl border border-white/5">
                             <div className="flex items-center gap-3">
-                                <AlertCircle size={14} className={alert.status === 'critical' ? 'text-rose-500' : 'text-amber-500'} />
+                                <AlertCircle size={14} className={alert.urgency === 'critical' ? 'text-rose-500' : 'text-amber-500'} />
                                 <span className="text-xs font-medium text-white/80">{alert.topicName}</span>
                             </div>
                             <span className="text-[10px] font-bold text-white/40">{alert.predictedScore}% Score</span>

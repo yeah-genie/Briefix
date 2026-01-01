@@ -11,6 +11,7 @@ const WHISPER_API_URL = 'https://api.openai.com/v1/audio/transcriptions';
 export interface TranscriptionResult {
     success: boolean;
     transcript?: string;
+    segments?: any[];
     language?: string;
     duration?: number;
     error?: string;
@@ -59,6 +60,7 @@ export async function transcribeAudio(audioBlob: Blob): Promise<TranscriptionRes
         return {
             success: true,
             transcript: data.text || '',
+            segments: data.segments,
             language: data.language,
             duration: data.duration,
         };

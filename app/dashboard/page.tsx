@@ -160,6 +160,7 @@ export default async function Dashboard() {
                                 {students.length > 0 ? (
                                     <VoiceRecorder
                                         className="border-none bg-transparent shadow-none"
+                                        students={students}
                                         studentId={students[0].id}
                                         subjectId={students[0].subject_id}
                                     />

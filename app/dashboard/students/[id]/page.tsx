@@ -4,7 +4,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
     getStudents,
     getStudentMastery,
-    getSessions
+    getSessions,
+    getLatestStudentSessionNotes,
+    getStudentMasteryHistory
 } from '@/lib/actions/crud';
 import { fetchSubjectData } from "@/lib/knowledge-graph-server";
 import StudentDetailClient from './StudentDetailClient';
@@ -45,8 +47,10 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
     const sessions = await getSessions();
     const studentSessions = sessions.filter(s => s.student_id === id);
 
-    // 3. Fetch Prediction Data via unified service
+    // 3. Fetch Prediction Data and Insights
     const predictions = await getStudentPredictions(id, student.subject_id);
+    const latestNotes = await getLatestStudentSessionNotes(id);
+    const masteryHistory = await getStudentMasteryHistory(id);
 
     if (!subject) {
         return (
@@ -69,6 +73,8 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
             subject={subject}
             sessions={studentSessions}
             predictions={predictions}
+            latestNotes={latestNotes}
+            masteryHistory={masteryHistory}
         />
     );
 }

@@ -2,7 +2,7 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { transcribeAudio } from "@/lib/services/whisper";
-import { extractTopicsFromTranscript } from "@/lib/services/gemini";
+import { extractTopicsFromTranscript, type MultimodalImage } from "@/lib/services/gemini";
 import { calculateNewScore } from "@/lib/mastery-utils";
 import { revalidatePath } from "next/cache";
 
@@ -68,18 +68,52 @@ export async function processSessionAudio(formData: FormData) {
         const transcript = transcriptionResult.transcript;
         console.log(`[Analysis] Transcription complete: ${transcript.length} chars`);
 
-        // 4. AI Analysis via Gemini
+        // 4. AI Analysis via Gemini (Multimodal support added P1.3)
         const { fetchSubjectData } = await import('@/lib/knowledge-graph-server');
         const subject = await fetchSubjectData(subjectId);
         const existingTopics = subject?.topics || [];
         const subjectName = subject?.name || subjectId;
 
-        console.log('[Analysis] Starting Gemini analysis...');
+        // Process images for Gemini multimodal analysis
+        const imageCount = parseInt(formData.get('imageCount') as string || '0');
+        const multimodalImages: MultimodalImage[] = [];
+        const evidenceUrls: string[] = [];
+
+        for (let i = 0; i < imageCount; i++) {
+            const imageBlob = formData.get(`image_${i}`) as Blob;
+            if (imageBlob) {
+                // A. Upload to Supabase Storage
+                const imageFileName = `${user.id}/evidence/${session.id}_${i}.jpg`;
+                await supabase.storage
+                    .from('recordings')
+                    .upload(imageFileName, imageBlob, {
+                        contentType: imageBlob.type || 'image/jpeg',
+                        upsert: true
+                    });
+
+                const { data: { publicUrl: imgUrl } } = supabase.storage
+                    .from('recordings')
+                    .getPublicUrl(imageFileName);
+                evidenceUrls.push(imgUrl);
+
+                // B. Prepare for Gemini
+                const buffer = await imageBlob.arrayBuffer();
+                multimodalImages.push({
+                    inlineData: {
+                        data: Buffer.from(buffer).toString('base64'),
+                        mimeType: imageBlob.type || 'image/jpeg'
+                    }
+                });
+            }
+        }
+
+        console.log(`[Analysis] Starting Gemini analysis with ${multimodalImages.length} images...`);
         const analysis = await extractTopicsFromTranscript(
             transcript,
             subjectId,
             subjectName,
-            existingTopics
+            existingTopics,
+            multimodalImages
         );
 
         if (!analysis.success) throw new Error(analysis.error);
@@ -135,6 +169,8 @@ export async function processSessionAudio(formData: FormData) {
             status: 'completed',
             recording_url: publicUrl,
             transcript: transcript,
+            transcript_segments: transcriptionResult.segments,
+            evidence_urls: evidenceUrls,
             notes: analysis.summary
         }).eq('id', session.id);
 
@@ -149,8 +185,9 @@ export async function processSessionAudio(formData: FormData) {
             proposalsFound: analysis.suggestedNewNodes?.length || 0
         };
 
-    } catch (err: any) {
-        console.error("Analysis Pipeline Error:", err);
-        return { success: false, error: err.message };
+    } catch (e) {
+        const error = e as Error;
+        console.error("Error processing session audio:", error);
+        return { success: false, error: error.message || 'Analysis failed' };
     }
 }
