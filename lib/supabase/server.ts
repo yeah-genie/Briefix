@@ -13,18 +13,26 @@ const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export async function createServerSupabaseClient() {
     const cookieStore = await cookies();
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    // Get and sanitize env vars
+    let url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+    let key = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+
+    // Check for "undefined" or "null" strings (common Vercel misconfiguration)
+    if (url === "undefined" || url === "null" || !url) url = "";
+    if (key === "undefined" || key === "null" || !key) key = "";
 
     if (!url || !key) {
         if (process.env.NODE_ENV === 'production') {
-            console.error("[Supabase Server] Missing env vars: NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY");
+            console.error(`[Supabase Server] Invalid configuration. URL length: ${url.length}, KEY length: ${key.length}`);
         }
     }
 
+    const finalUrl = url || PLACEHOLDER_URL;
+    const finalKey = key || PLACEHOLDER_KEY;
+
     return createServerClient(
-        url || PLACEHOLDER_URL,
-        key || PLACEHOLDER_KEY,
+        finalUrl,
+        finalKey,
         {
             cookies: {
                 getAll() {

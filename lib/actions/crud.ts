@@ -71,23 +71,28 @@ export async function getStudent(id: string): Promise<Student | null> {
 }
 
 export async function createStudent(student: StudentInsert) {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    const { data, error } = await supabase
-        .from("students")
-        .insert(student)
-        .select()
-        .single();
+        const { data, error } = await supabase
+            .from("students")
+            .insert(student)
+            .select()
+            .single();
 
-    if (error) {
-        console.error("Error creating student:", error);
-        return { success: false, error: `Student database error: ${error.message}` };
+        if (error) {
+            console.error("Error creating student (DB):", error);
+            return { success: false, error: `Student database error: ${error.message}` };
+        }
+
+        revalidatePath("/dashboard");
+        revalidatePath("/dashboard/students");
+
+        return { success: true, data };
+    } catch (e: any) {
+        console.error("Error creating student (System):", e);
+        return { success: false, error: `Critical system error: ${e.message || 'Unknown error'}` };
     }
-
-    revalidatePath("/dashboard");
-    revalidatePath("/dashboard/students");
-
-    return { success: true, data };
 }
 
 export async function registerStudentWithSubject(data: {

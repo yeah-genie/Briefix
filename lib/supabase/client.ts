@@ -10,8 +10,12 @@ const PLACEHOLDER_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 // Helper to get env vars at runtime (not build time)
 function getSupabaseConfig() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    let url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
+    let key = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
+
+    // Check for "undefined" or "null" strings
+    if (url === "undefined" || url === "null" || !url) url = "";
+    if (key === "undefined" || key === "null" || !key) key = "";
 
     return {
         url: url || PLACEHOLDER_URL,
