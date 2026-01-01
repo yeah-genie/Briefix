@@ -11,8 +11,14 @@ import { SessionList } from "./session-list";
 // ===================================
 
 export default async function SessionsPage() {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let user = null;
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    } catch (e) {
+        console.error("[SessionsPage] Error fetching user:", e);
+    }
 
     // Fetch data
     const sessions = await getSessions();

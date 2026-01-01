@@ -30,34 +30,44 @@ export async function getStudents(): Promise<Student[]> {
 }
 
 export async function getSubjects() {
-    const supabase = await createServerSupabaseClient();
-    const { data, error } = await supabase
-        .from('kb_subjects')
-        .select('id, name')
-        .order('name');
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data, error } = await supabase
+            .from('kb_subjects')
+            .select('id, name')
+            .order('name');
 
-    if (error) {
-        console.error("Error fetching subjects:", error);
+        if (error) {
+            console.error("Error fetching subjects (DB):", error);
+            return [];
+        }
+        return data || [];
+    } catch (e) {
+        console.error("Error fetching subjects (System):", e);
         return [];
     }
-    return data || [];
 }
 
 export async function getStudent(id: string): Promise<Student | null> {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    const { data, error } = await supabase
-        .from("students")
-        .select("*")
-        .eq("id", id)
-        .single();
+        const { data, error } = await supabase
+            .from("students")
+            .select("*")
+            .eq("id", id)
+            .single();
 
-    if (error) {
-        console.error("Error fetching student:", error);
+        if (error) {
+            console.error("Error fetching student (DB):", error);
+            return null;
+        }
+
+        return data;
+    } catch (e) {
+        console.error("Error fetching student (System):", e);
         return null;
     }
-
-    return data;
 }
 
 export async function createStudent(student: StudentInsert) {
@@ -271,60 +281,70 @@ export async function completeSession(id: string, transcript?: string): Promise<
 // ===================================
 
 export async function getStudentMastery(studentId: string) {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    const { data, error } = await supabase
-        .from("student_mastery")
-        .select("topic_id, score, status")
-        .eq("student_id", studentId);
+        const { data, error } = await supabase
+            .from("student_mastery")
+            .select("topic_id, score, status")
+            .eq("student_id", studentId);
 
-    if (error) {
-        console.error("Error fetching student mastery:", error);
+        if (error) {
+            console.error("Error fetching student mastery (DB):", error);
+            return [];
+        }
+
+        // Map database topic_id to the UI's topicId
+        return (data || []).map(m => ({
+            topicId: m.topic_id,
+            level: m.score
+        }));
+    } catch (e) {
+        console.error("Error fetching student mastery (System):", e);
         return [];
     }
-
-    // Map database topic_id to the UI's topicId
-    return (data || []).map(m => ({
-        topicId: m.topic_id,
-        level: m.score
-    }));
 }
 
 export async function getTopicInsights(studentId: string, topicId: string) {
-    const supabase = await createServerSupabaseClient();
+    try {
+        const supabase = await createServerSupabaseClient();
 
-    // Fetch the latest completed session that covers this topic
-    const { data, error } = await supabase
-        .from("session_topics")
-        .select(`
-            evidence,
-            future_impact,
-            status_after,
-            sessions!inner(
-                notes,
-                transcript,
-                scheduled_at
-            )
-        `)
-        .eq("sessions.student_id", studentId)
-        .eq("topic_id", topicId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .single();
+        // Fetch the latest completed session that covers this topic
+        const { data, error } = await supabase
+            .from("session_topics")
+            .select(`
+                evidence,
+                future_impact,
+                status_after,
+                sessions!inner(
+                    notes,
+                    transcript,
+                    scheduled_at
+                )
+            `)
+            .eq("sessions.student_id", studentId)
+            .eq("topic_id", topicId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
 
-    if (error) {
-        console.error("Error fetching topic insights:", error);
+        if (error) {
+            console.error("Error fetching topic insights (DB):", error);
+            return null;
+        }
+
+        return {
+            text: (Array.isArray(data.sessions) ? data.sessions[0]?.notes : (data.sessions as any)?.notes) || "No recent AI narrative available for this topic.",
+            nextSteps: [
+                "Review session evidence below",
+                "Focus on identified struggle points",
+                "Next scheduled session follow-up"
+            ],
+            evidence: data.evidence ? [data.evidence] : [],
+            futureImpact: data.future_impact
+        };
+    } catch (e) {
+        console.error("Error fetching topic insights (System):", e);
         return null;
     }
-
-    return {
-        text: (Array.isArray(data.sessions) ? data.sessions[0]?.notes : (data.sessions as any)?.notes) || "No recent AI narrative available for this topic.",
-        nextSteps: [
-            "Review session evidence below",
-            "Focus on identified struggle points",
-            "Next scheduled session follow-up"
-        ],
-        evidence: data.evidence ? [data.evidence] : [],
-        futureImpact: data.future_impact
-    };
 }

@@ -11,8 +11,14 @@ import { StudentList } from "./student-list";
 // ===================================
 
 export default async function StudentsPage() {
-    const supabase = await createServerSupabaseClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    let user = null;
+    try {
+        const supabase = await createServerSupabaseClient();
+        const { data } = await supabase.auth.getUser();
+        user = data.user;
+    } catch (e) {
+        console.error("[StudentsPage] Error fetching user:", e);
+    }
 
     // Fetch data
     const [students, subjects] = await Promise.all([
