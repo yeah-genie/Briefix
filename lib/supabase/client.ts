@@ -13,9 +13,12 @@ function getSupabaseConfig() {
     let url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
     let key = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
 
-    // Check for "undefined" or "null" strings
-    if (url === "undefined" || url === "null" || !url) url = "";
-    if (key === "undefined" || key === "null" || !key) key = "";
+    // Strict validation: must start with http and look like a URL
+    const isValidUrl = url.startsWith('http') && url.includes('.');
+    const isValidKey = key.length > 20;
+
+    if (!isValidUrl || url === "undefined" || url === "null") url = "";
+    if (!isValidKey || key === "undefined" || key === "null") key = "";
 
     return {
         url: url || PLACEHOLDER_URL,
