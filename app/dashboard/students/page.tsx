@@ -20,6 +20,10 @@ export default async function StudentsPage() {
         console.error("[StudentsPage] Error fetching user:", e);
     }
 
+    if (!user) {
+        redirect("/login");
+    }
+
     // Fetch data
     const [students, subjects] = await Promise.all([
         getStudents(),

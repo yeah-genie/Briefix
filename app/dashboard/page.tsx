@@ -37,6 +37,10 @@ export default async function Dashboard() {
         console.error("[Dashboard] Error fetching user:", e);
     }
 
+    if (!user) {
+        redirect("/login");
+    }
+
     // Fetch data
     const students = await getStudents();
     const sessions = await getSessions();

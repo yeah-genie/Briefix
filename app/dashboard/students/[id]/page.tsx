@@ -7,6 +7,13 @@ import Sidebar from '@/components/layout/Sidebar';
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
     const { id } = params;
 
+    const supabase = await createServerSupabaseClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/login");
+    }
+
     // 1. Fetch Student Info
     const students = await getStudents();
     const student = students.find(s => s.id === id);
