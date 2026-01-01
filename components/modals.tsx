@@ -47,8 +47,9 @@ export function AddStudentModal({ isOpen, subjects, onClose, onSubmit }: AddStud
             });
 
             // Handle server action result if provided
-            if (res && res.error) {
-                alert(res.error);
+            if (res && !res.success) {
+                alert(res.error || "Failed to add student.");
+                setLoading(false);
                 return;
             }
 

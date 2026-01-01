@@ -119,12 +119,20 @@ export async function registerStudentWithSubject(data: {
             finalSubjectId = data.custom_subject_name; // Use the name directly
         }
 
-        // 2. Create Student - tutor_id is nullable per schema
+        // 2. Create Student - tutor_id is NOT NULL per schema
+        if (!tutorId) {
+            console.error("[Register] Error: tutorId is missing. User must be logged in.");
+            return {
+                success: false,
+                error: "Authentication required: Please sign in again to register a student."
+            };
+        }
+
         const { data: studentData, error: studentError } = await supabase
             .from("students")
             .insert({
                 name: data.name,
-                subject: finalSubjectId,
+                subject_id: finalSubjectId,
                 parent_email: data.parent_email || null,
                 notes: data.notes || null,
                 tutor_id: tutorId
@@ -134,7 +142,7 @@ export async function registerStudentWithSubject(data: {
 
         if (studentError) {
             console.error("[Register] Error creating student (DB):", studentError);
-            return { success: false, error: `Student creation failed: ${studentError.message}` };
+            return { success: false, error: `Database error: ${studentError.message}` };
         }
 
         revalidatePath("/dashboard");
