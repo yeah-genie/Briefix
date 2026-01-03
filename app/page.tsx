@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Mic, Shield, TrendingUp } from "lucide-react";
 import { HeroProductPreview } from "@/components/landing/HeroProductPreview";
 import { LiveActivityIndicator, ScrollReveal } from "@/components/landing/AnimatedElements";
 
@@ -144,34 +145,37 @@ export default function Home() {
             </div>
           </ScrollReveal>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
               {
-                icon: '🎙️',
+                icon: Mic,
                 title: 'AI Scribing (Zero-Action)',
                 description: 'Just start the session. Our AI extracts every concept, mistake, and breakthrough with zero effort from you.',
               },
               {
-                icon: '🛡️',
+                icon: Shield,
                 title: 'Data Sovereignty (Trust)',
                 description: 'You are in control. Review analysis, then choose to commit or trash. Audio is purged immediately after processing.',
               },
               {
-                icon: '📈',
+                icon: TrendingUp,
                 title: 'Proof of Growth',
                 description: 'Automatic mastery heatmaps calibrated against official exam boards. Show parents the real progress data.',
               },
-            ].map((feature, i) => (
-              <ScrollReveal key={feature.title} delay={i * 100}>
-                <div className="group p-8 rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:border-[#10b981]/30 transition-all duration-300 hover:bg-white/[0.04]">
-                  <div className="w-14 h-14 bg-[#10b981]/10 rounded-2xl flex items-center justify-center mb-6 text-2xl group-hover:scale-110 transition-transform">
-                    {feature.icon}
+            ].map((feature, i) => {
+              const IconComponent = feature.icon;
+              return (
+                <ScrollReveal key={feature.title} delay={i * 100}>
+                  <div className="group p-6 md:p-8 rounded-2xl md:rounded-3xl bg-white/[0.02] border border-white/[0.05] hover:border-[#10b981]/30 transition-all duration-300 hover:bg-white/[0.04]">
+                    <div className="w-12 h-12 md:w-14 md:h-14 bg-[#10b981]/10 rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                      <IconComponent className="w-6 h-6 md:w-7 md:h-7 text-[#10b981]" />
+                    </div>
+                    <h3 className="text-lg md:text-2xl font-semibold mb-2 md:mb-4">{feature.title}</h3>
+                    <p className="text-sm md:text-base text-[#a1a1aa] leading-relaxed">{feature.description}</p>
                   </div>
-                  <h3 className="text-2xl font-semibold mb-4">{feature.title}</h3>
-                  <p className="text-[#a1a1aa] leading-relaxed">{feature.description}</p>
-                </div>
-              </ScrollReveal>
-            ))}
+                </ScrollReveal>
+              );
+            })}
           </div>
         </div>
       </section>
